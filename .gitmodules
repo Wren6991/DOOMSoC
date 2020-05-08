@@ -1,0 +1,9 @@
+[submodule "scripts"]
+	path = scripts
+	url = git@github.com:Wren6991/fpgascripts.git
+[submodule "libfpga"]
+	path = libfpga
+	url = ./hdl/libfpga/
+[submodule "hdl/libfpga"]
+	path = hdl/libfpga
+	url = git@github.com:Wren6991/libfpga.git
