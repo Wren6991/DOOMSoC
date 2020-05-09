@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="16" />
+   <wvobject fp_name="divider15" type="divider">
+      <obj_property name="label">Inputs</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="BkColor">128 128 255</obj_property>
+      <obj_property name="TextColor">230 230 230</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/rst_n" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rst_n</obj_property>
+      <obj_property name="ObjectShortName">rst_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/c" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">c[1:0]</obj_property>
+      <obj_property name="ObjectShortName">c[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/d" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">d[7:0]</obj_property>
+      <obj_property name="ObjectShortName">d[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/den" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">den</obj_property>
+      <obj_property name="ObjectShortName">den</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider16" type="divider">
+      <obj_property name="label">State</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="BkColor">128 128 255</obj_property>
+      <obj_property name="TextColor">230 230 230</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/d_count" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">d_count[3:0]</obj_property>
+      <obj_property name="ObjectShortName">d_count[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/q_m" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">q_m[8:0]</obj_property>
+      <obj_property name="ObjectShortName">q_m[8:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/q_m_count" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">q_m_count[3:0]</obj_property>
+      <obj_property name="ObjectShortName">q_m_count[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/imbalance" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">imbalance[4:0]</obj_property>
+      <obj_property name="ObjectShortName">imbalance[4:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/q_m_inv" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">q_m_inv[9:0]</obj_property>
+      <obj_property name="ObjectShortName">q_m_inv[9:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/den_delayed" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">den_delayed[1:0]</obj_property>
+      <obj_property name="ObjectShortName">den_delayed[1:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/c_delayed" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">c_delayed[0:1,1:0]</obj_property>
+      <obj_property name="ObjectShortName">c_delayed[0:1,1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider17" type="divider">
+      <obj_property name="label">Output</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="BkColor">128 128 255</obj_property>
+      <obj_property name="TextColor">230 230 230</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/dut/q" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">q[9:0]</obj_property>
+      <obj_property name="ObjectShortName">q[9:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
+   </wvobject>
+</wave_config>

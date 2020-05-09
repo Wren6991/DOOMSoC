@@ -28,7 +28,7 @@ always @ (posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
 		q_m <= 9'h0;
 	end else if (d_count > 4'd4 || (d_count == 4'd4 && !d[0])) begin
-		q_m <= {1'b0, ~^d[7:0], ~^d[6:0], ~^d[5:0], ~^d[4:0], ~^d[3:0], ~^d[2:0], ~^d[1:0], d[0]};
+		q_m <= {1'b0, ~^d[7:0],  ^d[6:0], ~^d[5:0],  ^d[4:0], ~^d[3:0],  ^d[2:0], ~^d[1:0], d[0]};
 	end else begin
 		q_m <= {1'b1,  ^d[7:0],  ^d[6:0],  ^d[5:0],  ^d[4:0],  ^d[3:0],  ^d[2:0],  ^d[1:0], d[0]};
 	end
@@ -70,7 +70,7 @@ always @ (posedge clk or negedge rst_n) begin
 		q_m_inv <= 10'h0;
 	end else begin
 		if (~|imbalance || q_m_count == 4'd4) begin
-			q_m_inv <= {~q_m[8], q_m[8], q_m[7:0] ~^ {8{q_m[8]}}};
+			q_m_inv <= {!q_m[8], q_m[8], q_m[8] ? q_m[7:0] : ~q_m[7:0]};
 			if (q_m[8])
 				imbalance <= imbalance + 5'd4 - q_m_count;
 			else
@@ -78,10 +78,10 @@ always @ (posedge clk or negedge rst_n) begin
 		end else if ($signed(imbalance) > 5'sh0 && q_m_count > 4'd4
 		          || $signed(imbalance) < 5'sh0 && q_m_count < 4'd4) begin
 			q_m_inv <= {1'b1, q_m[8], ~q_m[7:0]};
-			imbalance <= imbalance + {4'h0, q_m[8]} + 5'd4 - q_m_count;
+			imbalance <= imbalance + {4'h0, q_m[8]} - q_m_count + 5'd4;
 		end else begin
 			q_m_inv <= {1'b0, q_m[8],  q_m[7:0]};
-			imbalance <= imbalance - {4'h0, q_m[8]} + q_m_count - 5'd4;
+			imbalance <= imbalance - {4'h0, !q_m[8]} + q_m_count - 5'd4;
 		end 
 		// Override counter update during control period (but don't add extra muxing
 		// to datapath in this pipestage)
