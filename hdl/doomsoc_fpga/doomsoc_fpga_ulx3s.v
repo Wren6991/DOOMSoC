@@ -126,7 +126,7 @@ dvi_tx_parallel #(
 
 	.r       ((hctr + framectr) << 2),
 	.g       ((vctr + framectr) << 2),
-	.b       (hctr >> 1),
+	.b       (framectr),
 	.rgb_rdy (rgb_rdy),
 
 	.tmds2   (tmds2),
