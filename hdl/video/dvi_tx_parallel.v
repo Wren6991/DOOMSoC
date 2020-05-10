@@ -2,7 +2,7 @@
  * DO WHAT THE FUCK YOU WANT TO AND DON'T BLAME US PUBLIC LICENSE     *
  *                    Version 3, April 2008                           *
  *                                                                    *
- * Copyright (C) 2018 Luke Wren                                       *
+ * Copyright (C) 2020 Luke Wren                                       *
  *                                                                    *
  * Everyone is permitted to copy and distribute verbatim or modified  *
  * copies of this license document and accompanying software, and     *
@@ -50,7 +50,7 @@ module dvi_tx_parallel #(
 
 	output wire [9:0]  tmds2,
 	output wire [9:0]  tmds1,
-	output wire [9:0]  tmds0,
+	output wire [9:0]  tmds0
 );
 
 wire hsync;
@@ -105,5 +105,7 @@ tmds_encode tmds0_encoder (
 	.den   (den),
 	.q     (tmds0)
 );
+
+assign rgb_rdy = den;
 
 endmodule

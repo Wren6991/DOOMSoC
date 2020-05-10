@@ -77,6 +77,35 @@ wire [9:0] tmds0;
 wire [9:0] tmds1;
 wire [9:0] tmds2;
 
+wire rgb_rdy;
+
+
+reg [10:0] hctr;
+reg [10:0] vctr;
+reg [10:0] framectr;
+
+always @ (posedge clk_pix or negedge rst_n_pix) begin
+	if (!rst_n_pix) begin
+		hctr <= 0;
+		vctr <= 0;
+		framectr <= 0;
+	end else if (rgb_rdy) begin
+		hctr <= hctr + 1;
+		if (hctr == 639) begin
+			hctr <= 0;
+			if (vctr == 479) begin
+				vctr <= 0;
+				framectr <= framectr + 1;
+			end else begin
+				vctr <= vctr + 1;
+			end
+		end
+	end
+end
+
+reg [31:0] ctr = 0;
+always @ (posedge clk_pix) ctr <= ctr + 1;
+
 dvi_tx_parallel #(
 	// 640x480p 60 Hz timings from CEA-861D
 	.H_SYNC_POLARITY (1'b0),
@@ -95,10 +124,10 @@ dvi_tx_parallel #(
 	.rst_n   (rst_n_pix),
 	.en      (1),
 
-	.r       (8'hff),
-	.g       (8'h00),
-	.b       (8'h80),
-	.rgb_rdy (/* who cares */),
+	.r       ((hctr + framectr) << 2),
+	.g       ((vctr + framectr) << 2),
+	.b       (hctr >> 1),
+	.rgb_rdy (rgb_rdy),
 
 	.tmds2   (tmds2),
 	.tmds1   (tmds1),
@@ -150,5 +179,14 @@ dvi_serialiser serclk (
 	.qn        (gpdi_dn[3])
 );
 
+ddr_out ddr0p (
+	.clk    (clk_pix),
+	.rst_n  (rst_n_pix),
+
+	.d_rise (1),
+	.d_fall (0),
+	.e      (1),
+	.q      (gp[0])
+);
 
 endmodule

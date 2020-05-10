@@ -2,7 +2,7 @@
  * DO WHAT THE FUCK YOU WANT TO AND DON'T BLAME US PUBLIC LICENSE     *
  *                    Version 3, April 2008                           *
  *                                                                    *
- * Copyright (C) 2018 Luke Wren                                       *
+ * Copyright (C) 2020 Luke Wren                                       *
  *                                                                    *
  * Everyone is permitted to copy and distribute verbatim or modified  *
  * copies of this license document and accompanying software, and     *
@@ -88,7 +88,7 @@ always @ (posedge clk or negedge rst_n) begin
 	end else begin
 		if (~|imbalance || q_m_count == 4'd4) begin
 			q_m_inv <= {!q_m[8], q_m[8], q_m[8] ? q_m[7:0] : ~q_m[7:0]};
-			if (q_m[8])
+			if (!q_m[8])
 				imbalance <= imbalance + 5'd4 - q_m_count;
 			else
 				imbalance <= imbalance + q_m_count - 5'd4;
@@ -124,10 +124,10 @@ always @ (posedge clk or negedge rst_n) begin
 			q <= q_m_inv;
 		end else begin
 			case (c_delayed[1])
-				2'b00: q <= 10'b0010101011;
-				2'b01: q <= 10'b1101010100;
-				2'b10: q <= 10'b0010101010;
-				2'b11: q <= 10'b1101010101;
+				2'b00: q <= 10'b1101010100;
+				2'b01: q <= 10'b0010101011;
+				2'b10: q <= 10'b0101010100;
+				2'b11: q <= 10'b1010101011;
 			endcase
 		end
 	end

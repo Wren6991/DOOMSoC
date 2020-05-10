@@ -46,9 +46,9 @@ class TMDSEncode:
 		if self.imbalance == 0 or byteimbalance(q_m & 0xff) == 0:
 			q_out = q_m ^ (0 if q_m & 0x100 else inversion_mask)
 			if q_m & 0x100:
-				self.imbalance -= byteimbalance(q_m & 0xff)
-			else:
 				self.imbalance += byteimbalance(q_m & 0xff)
+			else:
+				self.imbalance -= byteimbalance(q_m & 0xff)
 		elif (self.imbalance > 0) == (byteimbalance(q_m & 0xff) > 0):
 			q_out = q_m ^ inversion_mask
 			self.imbalance += ((q_m & 0x100) >> 7) - byteimbalance(q_m & 0xff)
