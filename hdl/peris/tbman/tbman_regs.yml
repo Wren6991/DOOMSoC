@@ -1,0 +1,22 @@
+name: tbman
+bus: apb
+addr: 16
+data: 32
+regs:
+  - name: print
+    info: "Write a byte here to print to sim console"
+    bits:
+      - {b: [7, 0], access: wf}
+  - name: putint
+    info: "Write a uint32 here to print it (handy for quickly dumping memory etc.)"
+    bits:
+      - {b: [31, 0], access: wf}
+  - name: exit
+    info: "Write simulation exit condition here"
+    bits:
+      - {b: [31, 0], access: wf}
+  - name: defines
+    info: "The values of some Verilog defines (e.g. whether this is a simulation)"
+    bits:
+      - {b: 0, name: sim, access: rov}
+      - {b: 1, name: fpga, access: rov}

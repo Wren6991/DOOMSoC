@@ -1,0 +1,6 @@
+*.o
+*.elf
+*.hex
+*.dis
+# All subdirectories of this one (which are assumed to be test dirs):
+*/*

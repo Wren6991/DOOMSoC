@@ -1,3 +1,20 @@
+/**********************************************************************
+ * DO WHAT THE FUCK YOU WANT TO AND DON'T BLAME US PUBLIC LICENSE     *
+ *                    Version 3, April 2008                           *
+ *                                                                    *
+ * Copyright (C) 2020 Luke Wren                                       *
+ *                                                                    *
+ * Everyone is permitted to copy and distribute verbatim or modified  *
+ * copies of this license document and accompanying software, and     *
+ * changing either is allowed.                                        *
+ *                                                                    *
+ *   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION  *
+ *                                                                    *
+ * 0. You just DO WHAT THE FUCK YOU WANT TO.                          *
+ * 1. We're NOT RESPONSIBLE WHEN IT DOESN'T FUCKING WORK.             *
+ *                                                                    *
+ *********************************************************************/
+
 module doomsoc_fpga (
 	input wire         clk_osc,
 
@@ -7,186 +24,103 @@ module doomsoc_fpga (
 	inout  wire [27:0] gn,
 
 	// Differential display interface. 3 LSBs are TMDS 0, 1, 2. MSB is clock channel.
-	output wire [3:0] gpdi_dp,
-	output wire [3:0] gpdi_dn
+	output wire [3:0]  gpdi_dp,
+	output wire [3:0]  gpdi_dn,
 
+	// SDRAM
+	output wire        sdram_clk,
+	output wire [12:0] sdram_a,
+	inout  wire [15:0] sdram_dq,
+	output wire [1:0]  sdram_ba,
+	output wire [1:0]  sdram_dqm,
+	output wire        sdram_clke,
+	output wire        sdram_cs_n,
+	output wire        sdram_ras_n,
+	output wire        sdram_cas_n,
+	output wire        sdram_we_n,
+
+	// GPIO and serial peripherals
+	output wire        uart_tx,
+	input  wire        uart_rx
 );
 
-// reg [9:0] clkdiv10 = 10'b1100011000; // 10'b0000011111;
+wire clk_sys;
+wire clk_dvi_pix = clk_osc;
+wire clk_dvi_bit;
 
-// always @ (posedge clk_osc)
-// 	clkdiv10 <= {clkdiv10[0], clkdiv10[9:1]};
-
-wire clk_pix = clk_osc;
-wire clk_bit;
-wire pll_locked;
-
+wire pll_sys_locked;
+wire pll_bit_locked;
 wire rst_n_por;
 
-wire rst_n_bit;
-wire rst_n_pix;
-
-pll_25_125 inst_pll_25_125 (
-	.clkin   (clk_pix),
-	.clkout0 (clk_bit),
-	.locked  (pll_locked)
+pll_25_50 pll_sys (
+	.clkin   (clk_osc),
+	.clkout0 (clk_sys),
+	.locked  (pll_sys_locked)
 );
 
+pll_25_125 pll_bit (
+	.clkin   (clk_dvi_pix),
+	.clkout0 (clk_dvi_bit),
+	.locked  (pll_bit_locked)
+);
 
-fpga_reset por_u (
-	.clk         (clk_pix),
-	.force_rst_n (pll_locked),
+fpga_reset #(
+	.SHIFT (5),
+	.COUNT (100)
+) por_u (
+	.clk         (clk_sys),
+	.force_rst_n (pll_sys_locked && pll_bit_locked),
 	.rst_n       (rst_n_por)
 );
 
-reset_sync reset_sync_bit (
-	.clk          (clk_bit),
-	.rst_n_in     (rst_n_por),
-	.rst_n_out    (rst_n_bit)
+doomsoc_core #(
+	.W_SDRAM_BANKSEL (2),
+	.W_SDRAM_ADDR    (13),
+	.W_SDRAM_DATA    (16),
+	.BOOTRAM_PRELOAD ("bootram_init32.hex")
+) inst_doomsoc_core (
+	.clk_sys     (clk_sys),
+	.clk_dvi_pix (clk_dvi_pix),
+	.clk_dvi_bit (clk_dvi_bit),
+	.rst_n_por   (rst_n_por),
+
+	.sdram_clk   (sdram_clk),
+	.sdram_a     (sdram_a),
+	.sdram_dq    (sdram_dq),
+	.sdram_ba    (sdram_ba),
+	.sdram_dqm   (sdram_dqm),
+	.sdram_clke  (sdram_clke),
+	.sdram_cs_n  (sdram_cs_n),
+	.sdram_ras_n (sdram_ras_n),
+	.sdram_cas_n (sdram_cas_n),
+	.sdram_we_n  (sdram_we_n),
+
+	.dvip        (gpdi_dp),
+	.dvin        (gpdi_dn),
+
+	.uart_tx     (uart_tx),
+	.uart_rx     (uart_rx)
 );
 
-reset_sync reset_sync_pix (
-	.clk          (clk_pix),
-	.rst_n_in     (rst_n_por),
-	.rst_n_out    (rst_n_pix)
-);
+wire blink;
 
 blinky #(
 	.CLK_HZ(25 * 1000 * 1000),
 	.BLINK_HZ(1)
 ) blinky_u (
-	.clk   (clk_bit),
-	.blink (led[0])
+	.clk   (clk_sys),
+	.blink (blink)
 );
 
+assign led = {
+	!uart_tx,
+	!uart_rx,
+	4'h0,
+	blink,
+	1'b0
+};
 
-blinky #(
-	.CLK_HZ(2500 * 1000),
-	.BLINK_HZ(2)
-) blinky2_u (
-	.clk   (clk_pix),
-	.blink (led[1])
-);
-
-assign led[7:2] = 7'd0;
-
-assign gp[27:4] = 28'h0;
-assign gn[27:4] = 28'h0;
-
-wire [9:0] tmds0;
-wire [9:0] tmds1;
-wire [9:0] tmds2;
-
-wire rgb_rdy;
-
-
-reg [10:0] hctr;
-reg [10:0] vctr;
-reg [10:0] framectr;
-
-always @ (posedge clk_pix or negedge rst_n_pix) begin
-	if (!rst_n_pix) begin
-		hctr <= 0;
-		vctr <= 0;
-		framectr <= 0;
-	end else if (rgb_rdy) begin
-		hctr <= hctr + 1;
-		if (hctr == 639) begin
-			hctr <= 0;
-			if (vctr == 479) begin
-				vctr <= 0;
-				framectr <= framectr + 1;
-			end else begin
-				vctr <= vctr + 1;
-			end
-		end
-	end
-end
-
-reg [31:0] ctr = 0;
-always @ (posedge clk_pix) ctr <= ctr + 1;
-
-dvi_tx_parallel #(
-	// 640x480p 60 Hz timings from CEA-861D
-	.H_SYNC_POLARITY (1'b0),
-	.H_FRONT_PORCH   (16),
-	.H_SYNC_WIDTH    (96),
-	.H_BACK_PORCH    (48),
-	.H_ACTIVE_PIXELS (640),
-
-	.V_SYNC_POLARITY (1'b0),
-	.V_FRONT_PORCH   (10),
-	.V_SYNC_WIDTH    (2),
-	.V_BACK_PORCH    (33),
-	.V_ACTIVE_LINES  (480)
-) dvi_tx_ctrl (
-	.clk     (clk_pix),
-	.rst_n   (rst_n_pix),
-	.en      (1),
-
-	.r       ((hctr + framectr) << 2),
-	.g       ((vctr + framectr) << 2),
-	.b       (framectr),
-	.rgb_rdy (rgb_rdy),
-
-	.tmds2   (tmds2),
-	.tmds1   (tmds1),
-	.tmds0   (tmds0)
-);
-
-dvi_serialiser ser0 (
-	.clk_pix   (clk_pix),
-	.rst_n_pix (rst_n_pix),
-	.clk_x5    (clk_bit),
-	.rst_n_x5  (rst_n_bit),
-
-	.d         (tmds0),
-	.qp        (gpdi_dp[0]),
-	.qn        (gpdi_dn[0])
-);
-
-dvi_serialiser ser1 (
-	.clk_pix   (clk_pix),
-	.rst_n_pix (rst_n_pix),
-	.clk_x5    (clk_bit),
-	.rst_n_x5  (rst_n_bit),
-
-	.d         (tmds1),
-	.qp        (gpdi_dp[1]),
-	.qn        (gpdi_dn[1])
-);
-
-
-dvi_serialiser ser2 (
-	.clk_pix   (clk_pix),
-	.rst_n_pix (rst_n_pix),
-	.clk_x5    (clk_bit),
-	.rst_n_x5  (rst_n_bit),
-
-	.d         (tmds2),
-	.qp        (gpdi_dp[2]),
-	.qn        (gpdi_dn[2])
-);
-
-dvi_serialiser serclk (
-	.clk_pix   (clk_pix),
-	.rst_n_pix (rst_n_pix),
-	.clk_x5    (clk_bit),
-	.rst_n_x5  (rst_n_bit),
-
-	.d         (10'b0000011111),
-	.qp        (gpdi_dp[3]),
-	.qn        (gpdi_dn[3])
-);
-
-ddr_out ddr0p (
-	.clk    (clk_pix),
-	.rst_n  (rst_n_pix),
-
-	.d_rise (1),
-	.d_fall (0),
-	.e      (1),
-	.q      (gp[0])
-);
+assign gp[27:0] = 28'h0;
+assign gn[27:0] = 28'h0;
 
 endmodule

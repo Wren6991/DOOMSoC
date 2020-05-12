@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="101" />
+   <wvobject fp_name="/tb/inst_doomsoc_core/clk_sys" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk_sys</obj_property>
+      <obj_property name="ObjectShortName">clk_sys</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/clk_dvi_pix" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk_dvi_pix</obj_property>
+      <obj_property name="ObjectShortName">clk_dvi_pix</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/clk_dvi_bit" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk_dvi_bit</obj_property>
+      <obj_property name="ObjectShortName">clk_dvi_bit</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/rst_n_por" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rst_n_por</obj_property>
+      <obj_property name="ObjectShortName">rst_n_por</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_clk</obj_property>
+      <obj_property name="ObjectShortName">sdram_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_a" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_a[12:0]</obj_property>
+      <obj_property name="ObjectShortName">sdram_a[12:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_dq" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_dq[15:0]</obj_property>
+      <obj_property name="ObjectShortName">sdram_dq[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_ba" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_ba[1:0]</obj_property>
+      <obj_property name="ObjectShortName">sdram_ba[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_dqm" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_dqm[1:0]</obj_property>
+      <obj_property name="ObjectShortName">sdram_dqm[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_clke" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_clke</obj_property>
+      <obj_property name="ObjectShortName">sdram_clke</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_cs_n" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_cs_n</obj_property>
+      <obj_property name="ObjectShortName">sdram_cs_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_ras_n" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_ras_n</obj_property>
+      <obj_property name="ObjectShortName">sdram_ras_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_cas_n" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_cas_n</obj_property>
+      <obj_property name="ObjectShortName">sdram_cas_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sdram_we_n" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sdram_we_n</obj_property>
+      <obj_property name="ObjectShortName">sdram_we_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/dvip" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">dvip[3:0]</obj_property>
+      <obj_property name="ObjectShortName">dvip[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/dvin" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">dvin[3:0]</obj_property>
+      <obj_property name="ObjectShortName">dvin[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_tx" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_tx</obj_property>
+      <obj_property name="ObjectShortName">uart_tx</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_rx" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_rx</obj_property>
+      <obj_property name="ObjectShortName">uart_rx</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/rst_n_sys" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rst_n_sys</obj_property>
+      <obj_property name="ObjectShortName">rst_n_sys</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/rst_n_dvi_pix" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rst_n_dvi_pix</obj_property>
+      <obj_property name="ObjectShortName">rst_n_dvi_pix</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/rst_n_dvi_bit" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rst_n_dvi_bit</obj_property>
+      <obj_property name="ObjectShortName">rst_n_dvi_bit</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hready</obj_property>
+      <obj_property name="ObjectShortName">proc_hready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hresp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hresp</obj_property>
+      <obj_property name="ObjectShortName">proc_hresp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_haddr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_haddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">proc_haddr[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hwrite</obj_property>
+      <obj_property name="ObjectShortName">proc_hwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_htrans" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_htrans[1:0]</obj_property>
+      <obj_property name="ObjectShortName">proc_htrans[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hsize" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">proc_hsize[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hburst" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hburst[2:0]</obj_property>
+      <obj_property name="ObjectShortName">proc_hburst[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hprot" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hprot[3:0]</obj_property>
+      <obj_property name="ObjectShortName">proc_hprot[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hmastlock" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hmastlock</obj_property>
+      <obj_property name="ObjectShortName">proc_hmastlock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hwdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hwdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">proc_hwdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/proc_hrdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">proc_hrdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">proc_hrdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hready</obj_property>
+      <obj_property name="ObjectShortName">sram_hready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hready_resp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hready_resp</obj_property>
+      <obj_property name="ObjectShortName">sram_hready_resp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hresp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hresp</obj_property>
+      <obj_property name="ObjectShortName">sram_hresp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_haddr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_haddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sram_haddr[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hwrite</obj_property>
+      <obj_property name="ObjectShortName">sram_hwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_htrans" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_htrans[1:0]</obj_property>
+      <obj_property name="ObjectShortName">sram_htrans[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hsize" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">sram_hsize[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hburst" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hburst[2:0]</obj_property>
+      <obj_property name="ObjectShortName">sram_hburst[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hprot" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hprot[3:0]</obj_property>
+      <obj_property name="ObjectShortName">sram_hprot[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hmastlock" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hmastlock</obj_property>
+      <obj_property name="ObjectShortName">sram_hmastlock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hwdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hwdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sram_hwdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram_hrdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">sram_hrdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sram_hrdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hready</obj_property>
+      <obj_property name="ObjectShortName">bridge_hready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hready_resp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hready_resp</obj_property>
+      <obj_property name="ObjectShortName">bridge_hready_resp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hresp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hresp</obj_property>
+      <obj_property name="ObjectShortName">bridge_hresp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_haddr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_haddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_haddr[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hwrite</obj_property>
+      <obj_property name="ObjectShortName">bridge_hwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_htrans" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_htrans[1:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_htrans[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hsize" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_hsize[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hburst" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hburst[2:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_hburst[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hprot" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hprot[3:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_hprot[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hmastlock" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hmastlock</obj_property>
+      <obj_property name="ObjectShortName">bridge_hmastlock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hwdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hwdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_hwdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_hrdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_hrdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_hrdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_paddr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_paddr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_paddr[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_psel" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_psel</obj_property>
+      <obj_property name="ObjectShortName">bridge_psel</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_penable" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_penable</obj_property>
+      <obj_property name="ObjectShortName">bridge_penable</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_pwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_pwrite</obj_property>
+      <obj_property name="ObjectShortName">bridge_pwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_pwdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_pwdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_pwdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_pready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_pready</obj_property>
+      <obj_property name="ObjectShortName">bridge_pready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_prdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_prdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bridge_prdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/bridge_pslverr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">bridge_pslverr</obj_property>
+      <obj_property name="ObjectShortName">bridge_pslverr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_paddr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_paddr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">uart_paddr[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_psel" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_psel</obj_property>
+      <obj_property name="ObjectShortName">uart_psel</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_penable" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_penable</obj_property>
+      <obj_property name="ObjectShortName">uart_penable</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_pwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_pwrite</obj_property>
+      <obj_property name="ObjectShortName">uart_pwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_pwdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_pwdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">uart_pwdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_pready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_pready</obj_property>
+      <obj_property name="ObjectShortName">uart_pready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_prdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_prdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">uart_prdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_pslverr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_pslverr</obj_property>
+      <obj_property name="ObjectShortName">uart_pslverr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/uart_irq" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_irq</obj_property>
+      <obj_property name="ObjectShortName">uart_irq</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_paddr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_paddr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">tbman_paddr[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_psel" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_psel</obj_property>
+      <obj_property name="ObjectShortName">tbman_psel</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_penable" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_penable</obj_property>
+      <obj_property name="ObjectShortName">tbman_penable</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_pwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_pwrite</obj_property>
+      <obj_property name="ObjectShortName">tbman_pwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_pwdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_pwdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">tbman_pwdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_pready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_pready</obj_property>
+      <obj_property name="ObjectShortName">tbman_pready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_prdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_prdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">tbman_prdata[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tbman_pslverr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tbman_pslverr</obj_property>
+      <obj_property name="ObjectShortName">tbman_pslverr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tmds0" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tmds0[9:0]</obj_property>
+      <obj_property name="ObjectShortName">tmds0[9:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tmds1" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tmds1[9:0]</obj_property>
+      <obj_property name="ObjectShortName">tmds1[9:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/tmds2" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tmds2[9:0]</obj_property>
+      <obj_property name="ObjectShortName">tmds2[9:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/rgb_rdy" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rgb_rdy</obj_property>
+      <obj_property name="ObjectShortName">rgb_rdy</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/clk_dvipix" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk_dvipix</obj_property>
+      <obj_property name="ObjectShortName">clk_dvipix</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hready_resp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hready_resp</obj_property>
+      <obj_property name="ObjectShortName">sram1_hready_resp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hready</obj_property>
+      <obj_property name="ObjectShortName">sram1_hready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hresp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hresp</obj_property>
+      <obj_property name="ObjectShortName">sram1_hresp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_haddr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_haddr</obj_property>
+      <obj_property name="ObjectShortName">sram1_haddr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hwrite</obj_property>
+      <obj_property name="ObjectShortName">sram1_hwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_htrans" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_htrans</obj_property>
+      <obj_property name="ObjectShortName">sram1_htrans</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hsize" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hsize</obj_property>
+      <obj_property name="ObjectShortName">sram1_hsize</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hburst" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hburst</obj_property>
+      <obj_property name="ObjectShortName">sram1_hburst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hprot" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hprot</obj_property>
+      <obj_property name="ObjectShortName">sram1_hprot</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hmastlock" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hmastlock</obj_property>
+      <obj_property name="ObjectShortName">sram1_hmastlock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hwdata" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hwdata</obj_property>
+      <obj_property name="ObjectShortName">sram1_hwdata</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/sram1_hrdata" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sram1_hrdata</obj_property>
+      <obj_property name="ObjectShortName">sram1_hrdata</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/hctr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">hctr[10:0]</obj_property>
+      <obj_property name="ObjectShortName">hctr[10:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/vctr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">vctr[10:0]</obj_property>
+      <obj_property name="ObjectShortName">vctr[10:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb/inst_doomsoc_core/framectr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">framectr[10:0]</obj_property>
+      <obj_property name="ObjectShortName">framectr[10:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+</wave_config>
