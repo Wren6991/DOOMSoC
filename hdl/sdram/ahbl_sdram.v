@@ -101,6 +101,7 @@ wire [2:0]  time_rcd;
 wire [2:0]  time_rp;
 wire [2:0]  time_rrd;
 wire [2:0]  time_ras;
+wire [2:0]  time_wr;
 wire [1:0]  time_cas;
 
 wire [11:0] cfg_refresh_interval;
@@ -146,6 +147,7 @@ sdram_regs regblock (
 	.time_rp_o            (time_rp),
 	.time_rrd_o           (time_rrd),
 	.time_ras_o           (time_ras),
+	.time_wr_o            (time_wr),
 	.time_cas_o           (time_cas),
 
 	.refresh_o            (cfg_refresh_interval),
@@ -253,6 +255,7 @@ sdram_scheduler #(
 	.time_rp              (time_rp),
 	.time_rrd             (time_rrd),
 	.time_ras             (time_ras),
+	.time_wr              (time_wr),
 	.time_cas             (time_cas),
 
 	.req_vld              (scheduler_req_vld),

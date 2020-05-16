@@ -25,7 +25,9 @@ regs:
         info: "tRRD: Row activate to row activate delay (different banks)."}
       - {b: [18, 16], name: ras, access: rw,
         info: "tRAS: Row activate to precharge time (same bank)."}
-      - {b: [21, 20], name: cas, access: rw,
+      - {b: [22, 20], name: wr,  access: rw,
+        info: "tWR: Write recovery time. Last Write data to Precharge (same bank)"}
+      - {b: [25, 24], name: cas, access: rw,
         info: "CAS latency. Should match the value programmed into SDRAM mode register."}
   - name: refresh
     info: "tREFI: Average refresh interval, in SDRAM clock cycles."

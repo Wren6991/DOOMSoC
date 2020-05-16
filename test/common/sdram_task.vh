@@ -45,13 +45,14 @@ begin
 	apb_write(CTLREG_CMD_DIRECT, 13'b0_00_011_0_011 << 3); // ModeRegisterSet
 
     // Timings below are for MT48LC32M16A2 @ 100 MHz
-	//                          /-------------------------- tCAS - 1    3 clk
-	//                          |    /--------------------- tRAS - 1    44 ns 5 clk
-	//                          |    |    /---------------- tRRD - 1    15 ns 2 clk
-	//                          |    |    |    /----------- tRP - 1     20 ns 2 clk
-	//                          |    |    |    |    /------ tRCD - 1    20 ns 2 clk
-	//                          |    |    |    |    |    /- tRC - 1     66 ns 7 clk
-	apb_write(CTLREG_TIME, 32'b10_0100_0001_0001_0001_0110);
+	//                          /------------------------------- tCAS - 1    3 clk
+	//                          |    /-------------------------- tWR - 1     15 ns 2 clk
+	//                          |    |    /--------------------- tRAS - 1    44 ns 5 clk
+	//                          |    |    |    /---------------- tRRD - 1    15 ns 2 clk
+	//                          |    |    |    |    /----------- tRP - 1     20 ns 2 clk
+	//                          |    |    |    |    |    /------ tRCD - 1    20 ns 2 clk
+	//                          |    |    |    |    |    |    /- tRC - 1     66 ns 7 clk (also tRFC)
+	apb_write(CTLREG_TIME, 32'b10_0001_0100_0001_0001_0001_0110);
 end
 endtask
 

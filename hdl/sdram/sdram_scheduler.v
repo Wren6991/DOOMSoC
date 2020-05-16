@@ -129,6 +129,7 @@ module sdram_scheduler #(
 	input wire [W_TIME_CTR-1:0]       time_rp,  // tRP: Precharge to RowActivate delay (same bank)
 	input wire [W_TIME_CTR-1:0]       time_rrd, // tRRD: RowActivate to RowActivate, different banks
 	input wire [W_TIME_CTR-1:0]       time_ras, // tRAS: RowActivate to Precharge, same bank
+	input wire [W_TIME_CTR-1:0]       time_wr,  // tWR: Write to Precharge, same bank
 	input wire [1:0]                  time_cas, // tCAS: CAS-to-data latency
 
 	input  wire [N_REQ-1:0]           req_vld,
@@ -166,6 +167,7 @@ reg [W_TIME_CTR-1:0] ctr_ras_to_cas      [0:N_BANKS-1]; // tRCD
 reg [W_TIME_CTR-1:0] ctr_pre_to_ras      [0:N_BANKS-1]; // tRP
 reg [W_TIME_CTR-1:0] ctr_ras_to_ras_any;                // tRRD, global across all banks
 reg [W_TIME_CTR-1:0] ctr_ras_to_pre      [0:N_BANKS-1]; // tRAS
+reg [3:0]            ctr_cas_to_pre      [0:N_BANKS-1]; // tWR, and blocking precharge during read bursts
 
 wire precharge_is_all = cmd_addr[10];
 
@@ -179,6 +181,7 @@ always @ (posedge clk or negedge rst_n) begin: timing_scoreboard_update
 			ctr_ras_to_cas     [i] <= {W_TIME_CTR{1'b0}};
 			ctr_pre_to_ras     [i] <= {W_TIME_CTR{1'b0}};
 			ctr_ras_to_pre     [i] <= {W_TIME_CTR{1'b0}};
+			ctr_cas_to_pre     [i] <= {W_TIME_CTR{1'b0}};
 		end
 		ctr_ras_to_ras_any <= {W_TIME_CTR{1'b0}};
 	end else begin
@@ -188,6 +191,7 @@ always @ (posedge clk or negedge rst_n) begin: timing_scoreboard_update
 			ctr_ras_to_cas[i] <= ctr_ras_to_cas[i] - |ctr_ras_to_cas[i];
 			ctr_pre_to_ras[i] <= ctr_pre_to_ras[i] - |ctr_pre_to_ras[i];
 			ctr_ras_to_pre[i] <= ctr_ras_to_pre[i] - |ctr_ras_to_pre[i];
+			ctr_cas_to_pre[i] <= ctr_cas_to_pre[i] - |ctr_cas_to_pre[i];
 		end
 		ctr_ras_to_ras_any <= ctr_ras_to_ras_any - |ctr_ras_to_ras_any;
 
@@ -202,6 +206,11 @@ always @ (posedge clk or negedge rst_n) begin: timing_scoreboard_update
 				end
 				if (cmd == CMD_PRECHARGE && (precharge_is_all || cmd_banksel == i)) begin
 					ctr_pre_to_ras[i] <= time_rp;
+				end
+				if (cmd == CMD_WRITE && cmd_banksel == i) begin
+					ctr_cas_to_pre[i] <= BURST_LEN + time_wr;
+				end else if (cmd == CMD_READ && cmd_banksel == i) begin
+					ctr_cas_to_pre[i] <= BURST_LEN + time_cas;
 				end
 			end
 			if (cmd == CMD_ACTIVATE) begin
@@ -382,9 +391,9 @@ always @ (*) begin: decode_bank_possible
 	integer bank;
 	for (bank = 0; bank < N_BANKS; bank = bank + 1) begin
 		bank_possible[bank] = {
-			// 2. Precharge must respect tRAS. Activate must respect tRC, tRP, tRRD
+			// 2. Precharge must respect tRAS, tWR. Activate must respect tRC, tRP, tRRD
 			bank_active[bank] ?
-				~|ctr_ras_to_pre[bank] :
+				~|{ctr_ras_to_pre[bank], ctr_cas_to_pre[bank]}:
 				~|{ctr_ras_to_ras_any, ctr_ras_to_ras_same[bank], ctr_pre_to_ras[bank]},
 			// 1. Activate must respect tRC, tRP, tRRD
 			~|{ctr_ras_to_ras_any, ctr_ras_to_ras_same[bank], ctr_pre_to_ras[bank]},

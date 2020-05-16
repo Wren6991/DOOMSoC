@@ -74,11 +74,16 @@
 #define SDRAM_TIME_RAS_LSB  16
 #define SDRAM_TIME_RAS_BITS 3
 #define SDRAM_TIME_RAS_MASK 0x70000
+// Field: TIME_WR  Access: RW
+// tWR: Write recovery time. Last Write data to Precharge (same bank)
+#define SDRAM_TIME_WR_LSB  20
+#define SDRAM_TIME_WR_BITS 3
+#define SDRAM_TIME_WR_MASK 0x700000
 // Field: TIME_CAS  Access: RW
 // CAS latency. Should match the value programmed into SDRAM mode register.
-#define SDRAM_TIME_CAS_LSB  20
+#define SDRAM_TIME_CAS_LSB  24
 #define SDRAM_TIME_CAS_BITS 2
-#define SDRAM_TIME_CAS_MASK 0x300000
+#define SDRAM_TIME_CAS_MASK 0x3000000
 
 /*******************************************************************************
 *                                   REFRESH                                    *

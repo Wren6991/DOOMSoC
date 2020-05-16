@@ -31,6 +31,7 @@ module sdram_regs (
 	output reg [2:0] time_rp_o,
 	output reg [2:0] time_rrd_o,
 	output reg [2:0] time_ras_o,
+	output reg [2:0] time_wr_o,
 	output reg [1:0] time_cas_o,
 	output reg [11:0] refresh_o,
 	output reg [7:0] row_cooldown_o,
@@ -91,14 +92,17 @@ wire [2:0] time_rrd_wdata = wdata[14:12];
 wire [2:0] time_rrd_rdata;
 wire [2:0] time_ras_wdata = wdata[18:16];
 wire [2:0] time_ras_rdata;
-wire [1:0] time_cas_wdata = wdata[21:20];
+wire [2:0] time_wr_wdata = wdata[22:20];
+wire [2:0] time_wr_rdata;
+wire [1:0] time_cas_wdata = wdata[25:24];
 wire [1:0] time_cas_rdata;
-wire [31:0] __time_rdata = {10'h0, time_cas_rdata, 1'h0, time_ras_rdata, 1'h0, time_rrd_rdata, 1'h0, time_rp_rdata, 1'h0, time_rcd_rdata, 1'h0, time_rc_rdata};
+wire [31:0] __time_rdata = {6'h0, time_cas_rdata, 1'h0, time_wr_rdata, 1'h0, time_ras_rdata, 1'h0, time_rrd_rdata, 1'h0, time_rp_rdata, 1'h0, time_rcd_rdata, 1'h0, time_rc_rdata};
 assign time_rc_rdata = time_rc_o;
 assign time_rcd_rdata = time_rcd_o;
 assign time_rp_rdata = time_rp_o;
 assign time_rrd_rdata = time_rrd_o;
 assign time_ras_rdata = time_ras_o;
+assign time_wr_rdata = time_wr_o;
 assign time_cas_rdata = time_cas_o;
 
 wire [11:0] refresh_wdata = wdata[11:0];
@@ -158,6 +162,7 @@ always @ (posedge clk or negedge rst_n) begin
 		time_rp_o <= 3'h0;
 		time_rrd_o <= 3'h0;
 		time_ras_o <= 3'h0;
+		time_wr_o <= 3'h0;
 		time_cas_o <= 2'h0;
 		refresh_o <= 12'h0;
 		row_cooldown_o <= 8'h0;
@@ -176,6 +181,8 @@ always @ (posedge clk or negedge rst_n) begin
 			time_rrd_o <= time_rrd_wdata;
 		if (__time_wen)
 			time_ras_o <= time_ras_wdata;
+		if (__time_wen)
+			time_wr_o <= time_wr_wdata;
 		if (__time_wen)
 			time_cas_o <= time_cas_wdata;
 		if (__refresh_wen)
