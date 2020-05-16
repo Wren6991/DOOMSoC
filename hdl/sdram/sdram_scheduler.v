@@ -107,7 +107,7 @@
 // than) Activate (Empty).
 
 module sdram_scheduler #(
-	parameter N_REQ          = 1,
+	parameter N_REQ          = 4,
 	parameter W_REFRESH_CTR  = 12,
 	parameter W_COOLDOWN_CTR = 8,
 	parameter W_RADDR        = 13,
@@ -363,12 +363,12 @@ always @ (*) begin: decode_desired
 		for (master = 0; master < N_REQ; master = master + 1) begin
 			desired[bank][master] = {
 				// 2. Precharge on page miss, or Activate on page empty
-				req_vld[master] && (bank_active[bank] ? bank_active_row[bank] != req_raddr[master] : 1'b1),
+				req_vld[master] && (bank_active[bank] ? bank_active_row[bank] != req_raddr[master * W_RADDR +: W_RADDR] : 1'b1),
 				// 1. Activate following page miss
 				master_has_precharged[master],
 				// 0. Read/write burst
-				req_vld[master] && bank_active[bank] && bank_active_row[bank] == req_raddr[master]
-			} & {N_OPS{req_banksel[master] == bank}};
+				req_vld[master] && bank_active[bank] && bank_active_row[bank] == req_raddr[master * W_RADDR +: W_RADDR]
+			} & {N_OPS{req_banksel[master * W_BANKSEL +: W_BANKSEL] == bank}};
 		end
 	end
 end
@@ -504,9 +504,12 @@ assign {cmd_ras_n, cmd_cas_n, cmd_we_n} =
 	bank_active_row[muxed_banksel] != muxed_raddr ? CMD_PRECHARGE :
 	muxed_write                                   ? CMD_WRITE     : CMD_READ;
 
-assign cmd_addr = !bank_active[muxed_banksel] ? muxed_raddr : muxed_caddr;
+assign cmd_addr = bank_active[muxed_banksel] ? muxed_caddr : muxed_raddr;
 assign cmd_banksel = muxed_banksel;
 
+assign req_rdy = highest_master_with_highest_op & {N_REQ{cmd == CMD_WRITE || cmd == CMD_READ}};
+
+// Onehot0 read/write data strobes to control bus interface
 wire [N_REQ-1:0] dq_master_sel;
 
 generate
@@ -523,5 +526,6 @@ assign dq_write = cmd_vld && cmd == CMD_WRITE ? highest_master_with_highest_op :
 	dq_master_sel & {N_REQ{scheduled_dq_op == 2'b10}};
 
 assign dq_read = dq_master_sel & {N_REQ{scheduled_dq_op == 2'b11}};
+
 
 endmodule

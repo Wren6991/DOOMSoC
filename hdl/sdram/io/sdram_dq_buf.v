@@ -31,8 +31,8 @@ IDDRX1F iddr (
 	.D    (i_pad),
 	.SCLK (clk),
 	.RST  (1'b0),
-	.Q0   (i),
-	.Q1   (/* unused */)
+	.Q0   (/* unused */),
+	.Q1   (i)             // FIXME negedge capture for now until I look into timing and delay lines
 );
 
 // ECP5 datasheet mentions a PIO primitive for synchronous tristating ("TSFF")
@@ -60,6 +60,16 @@ TRELLIS_IO #(
 
 `else
 
+reg i_negedge;
+
+always @ (negedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		i_negedge <= 1'b0;
+	end else begin
+		i_negedge <= dq;
+	end
+end
+
 reg o_reg;
 reg oe_reg;
 reg i_reg;
@@ -72,7 +82,7 @@ always @ (posedge clk or negedge rst_n) begin
 	end else begin
 		o_reg <= o;
 		oe_reg <= oe;
-		i_reg <= dq;
+		i_reg <= i_negedge;
 	end
 end
 

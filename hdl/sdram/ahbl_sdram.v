@@ -44,51 +44,53 @@ module ahbl_sdram #(
 	parameter W_SDRAM_BANKSEL    = 2,
 	parameter W_SDRAM_ADDR       = 13,
 	parameter W_SDRAM_DATA       = 16,
+	parameter N_MASTERS          = 4,
 	parameter LEN_AHBL_BURST     = 4,
 	parameter W_HADDR            = 32,
 	parameter W_HDATA            = 32  // Do not modify
 ) (
 	// Clock and reset
-	input  wire                       clk,
-	input  wire                       rst_n,
+	input  wire                         clk,
+	input  wire                         rst_n,
 
 	// SDRAM
-	output wire                       sdram_clk,
-	output wire [W_SDRAM_ADDR-1:0]    sdram_a,
-	inout  wire [W_SDRAM_DATA-1:0]    sdram_dq,
-	output wire [W_SDRAM_BANKSEL-1:0] sdram_ba,
-	output wire [W_SDRAM_DATA/8-1:0]  sdram_dqm,
-	output wire                       sdram_clke,
-	output wire                       sdram_cs_n,
-	output wire                       sdram_ras_n,
-	output wire                       sdram_cas_n,
-	output wire                       sdram_we_n,
+	output wire                         sdram_clk,
+	output wire [W_SDRAM_ADDR-1:0]      sdram_a,
+	inout  wire [W_SDRAM_DATA-1:0]      sdram_dq,
+	output wire [W_SDRAM_BANKSEL-1:0]   sdram_ba,
+	output wire [W_SDRAM_DATA/8-1:0]    sdram_dqm,
+	output wire                         sdram_clke,
+	output wire                         sdram_cs_n,
+	output wire                         sdram_ras_n,
+	output wire                         sdram_cas_n,
+	output wire                         sdram_we_n,
 
 	// APB configuration slave
-	input  wire                       apbs_psel,
-	input  wire                       apbs_penable,
-	input  wire                       apbs_pwrite,
-	input  wire [15:0]                apbs_paddr,
-	input  wire [31:0]                apbs_pwdata,
-	output wire [31:0]                apbs_prdata,
-	output wire                       apbs_pready,
-	output wire                       apbs_pslverr,
+	input  wire                         apbs_psel,
+	input  wire                         apbs_penable,
+	input  wire                         apbs_pwrite,
+	input  wire [15:0]                  apbs_paddr,
+	input  wire [31:0]                  apbs_pwdata,
+	output wire [31:0]                  apbs_prdata,
+	output wire                         apbs_pready,
+	output wire                         apbs_pslverr,
 
-	// AHBL bus interface
-	output wire                       ahbls_hready_resp,
-	input  wire                       ahbls_hready,
-	output wire                       ahbls_hresp,
-	input  wire [W_HADDR-1:0]         ahbls_haddr,
-	input  wire                       ahbls_hwrite,
-	input  wire [1:0]                 ahbls_htrans,
-	input  wire [2:0]                 ahbls_hsize,
-	input  wire [2:0]                 ahbls_hburst,
-	input  wire [3:0]                 ahbls_hprot,
-	input  wire                       ahbls_hmastlock,
-	input  wire [W_HDATA-1:0]         ahbls_hwdata,
-	output wire [W_HDATA-1:0]         ahbls_hrdata
+	// AHBL bus interfaces, 1 per master, wrapped burst only
+	input  wire [N_MASTERS-1:0]         ahbls_hready,
+	output wire [N_MASTERS-1:0]         ahbls_hready_resp,
+	output wire [N_MASTERS-1:0]         ahbls_hresp,
+	input  wire [N_MASTERS*W_HADDR-1:0] ahbls_haddr,
+	input  wire [N_MASTERS-1:0]         ahbls_hwrite,
+	input  wire [N_MASTERS*2-1:0]       ahbls_htrans,
+	input  wire [N_MASTERS*3-1:0]       ahbls_hsize,
+	input  wire [N_MASTERS*3-1:0]       ahbls_hburst,
+	input  wire [N_MASTERS*4-1:0]       ahbls_hprot,
+	input  wire [N_MASTERS-1:0]         ahbls_hmastlock,
+	input  wire [N_MASTERS*W_HDATA-1:0] ahbls_hwdata,
+	output wire [N_MASTERS*W_HDATA-1:0] ahbls_hrdata
 );
 
+// ----------------------------------------------------------------------------
 // Control registers
 
 wire        csr_en;
@@ -161,22 +163,149 @@ sdram_regs regblock (
 	.cmd_direct_ba_wen    (cmd_direct_ba_push)
 );
 
-// IO interface
+// ----------------------------------------------------------------------------
+// AHBL slave interfaces
 
-wire [W_SDRAM_DATA-1:0]    sdram_dq_o_next;
-wire                       sdram_dq_oe_next;
-wire [W_SDRAM_DATA-1:0]    sdram_dq_i;
+wire [N_MASTERS-1:0]                 scheduler_req_vld;
+wire [N_MASTERS-1:0]                 scheduler_req_rdy;
+wire [N_MASTERS*ROW_BITS-1:0]        scheduler_req_raddr;
+wire [N_MASTERS*W_SDRAM_BANKSEL-1:0] scheduler_req_banksel;
+wire [N_MASTERS*COLUMN_BITS-1:0]     scheduler_req_caddr;
+wire [N_MASTERS-1:0]                 scheduler_req_write;
+
+
+wire [W_SDRAM_DATA-1:0]              sdram_dq_o_next;
+wire                                 sdram_dq_oe_next;
+wire [W_SDRAM_DATA-1:0]              sdram_dq_i;
+
+wire [N_MASTERS-1:0]                 sdram_write_rdy;
+wire [N_MASTERS-1:0]                 sdram_read_vld;
+
+ahbl_sdram_bus_interface #(
+	.W_CADDR      (COLUMN_BITS),
+	.W_RADDR      (ROW_BITS),
+	.W_BANKSEL    (W_SDRAM_BANKSEL),
+	.W_SDRAM_DATA (W_SDRAM_DATA),
+	.N_MASTERS    (N_MASTERS),
+	.W_HADDR      (W_HADDR),
+	.W_HDATA      (W_HDATA)
+) bus_interface (
+	.clk               (clk),
+	.rst_n             (rst_n),
+
+	.ahbls_hready      (ahbls_hready),
+	.ahbls_hready_resp (ahbls_hready_resp),
+	.ahbls_hresp       (ahbls_hresp),
+	.ahbls_haddr       (ahbls_haddr),
+	.ahbls_hwrite      (ahbls_hwrite),
+	.ahbls_htrans      (ahbls_htrans),
+	.ahbls_hsize       (ahbls_hsize),
+	.ahbls_hburst      (ahbls_hburst),
+	.ahbls_hprot       (ahbls_hprot),
+	.ahbls_hmastlock   (ahbls_hmastlock),
+	.ahbls_hwdata      (ahbls_hwdata),
+	.ahbls_hrdata      (ahbls_hrdata),
+
+	.req_vld           (scheduler_req_vld),
+	.req_rdy           (scheduler_req_rdy),
+	.req_raddr         (scheduler_req_raddr),
+	.req_banksel       (scheduler_req_banksel),
+	.req_caddr         (scheduler_req_caddr),
+	.req_write         (scheduler_req_write),
+
+	.sdram_write_rdy   (sdram_write_rdy),
+	.sdram_write_data  (sdram_dq_o_next),
+
+	.sdram_read_vld    (sdram_read_vld),
+	.sdram_read_data   (sdram_dq_i)
+);
+
+// ----------------------------------------------------------------------------
+// SDRAM scheduler
+
+wire [W_SDRAM_ADDR-1:0]    scheduler_cmd_a;
+wire [W_SDRAM_BANKSEL-1:0] scheduler_cmd_ba;
+wire                       scheduler_cmd_vld;
+wire                       scheduler_cmd_ras_n;
+wire                       scheduler_cmd_cas_n;
+wire                       scheduler_cmd_we_n;
+
+wire [N_MASTERS-1:0]       scheduler_dq_write_rdy;
+wire [N_MASTERS-1:0]       scheduler_dq_read_vld;
+
+sdram_scheduler #(
+	.N_REQ          (N_MASTERS),
+	.W_REFRESH_CTR  (12),
+	.W_COOLDOWN_CTR (8),
+	.W_TIME_CTR     (3),
+	.W_RADDR        (ROW_BITS),
+	.W_BANKSEL      (W_SDRAM_BANKSEL),
+	.W_CADDR        (COLUMN_BITS),
+	.BURST_LEN      (LEN_AHBL_BURST * W_HDATA / W_SDRAM_DATA)
+) inst_sdram_scheduler (
+	.clk                  (clk),
+	.rst_n                (rst_n),
+
+	.cfg_refresh_interval (cfg_refresh_interval),
+	.cfg_row_cooldown     (cfg_row_cooldown),
+	.time_rc              (time_rc),
+	.time_rcd             (time_rcd),
+	.time_rp              (time_rp),
+	.time_rrd             (time_rrd),
+	.time_ras             (time_ras),
+	.time_cas             (time_cas),
+
+	.req_vld              (scheduler_req_vld),
+	.req_rdy              (scheduler_req_rdy),
+	.req_raddr            (scheduler_req_raddr),
+	.req_banksel          (scheduler_req_banksel),
+	.req_caddr            (scheduler_req_caddr),
+	.req_write            (scheduler_req_write),
+
+	.cmd_vld              (scheduler_cmd_vld),
+	.cmd_ras_n            (scheduler_cmd_ras_n),
+	.cmd_cas_n            (scheduler_cmd_cas_n),
+	.cmd_we_n             (scheduler_cmd_we_n),
+	.cmd_addr             (scheduler_cmd_a),
+	.cmd_banksel          (scheduler_cmd_ba),
+
+	.dq_write             (scheduler_dq_write_rdy),
+	.dq_read              (scheduler_dq_read_vld)
+);
+
+// ----------------------------------------------------------------------------
+// IO interface
 
 wire                       sdram_clk_enable = csr_pu; // This enables the toggling of sdram_clk, NOT the same as sdram_clke
 
-wire [W_SDRAM_ADDR-1:0]    sdram_a_next;
-wire [W_SDRAM_BANKSEL-1:0] sdram_ba_next;
-wire [W_SDRAM_DATA/8-1:0]  sdram_dqm_next;
-wire                       sdram_clke_next;
-wire                       sdram_cs_n_next;
-wire                       sdram_ras_n_next;
-wire                       sdram_cas_n_next;
-wire                       sdram_we_n_next;
+wire [W_SDRAM_ADDR-1:0]    sdram_a_next     = scheduler_cmd_vld ? scheduler_cmd_a : cmd_direct_push ? cmd_direct_addr : {W_SDRAM_ADDR{1'b0}};
+wire [W_SDRAM_BANKSEL-1:0] sdram_ba_next    = scheduler_cmd_vld ? scheduler_cmd_ba : cmd_direct_push ? cmd_direct_ba : {W_SDRAM_BANKSEL{1'b0}};
+wire                       sdram_cas_n_next = scheduler_cmd_vld ? scheduler_cmd_cas_n : cmd_direct_push ? cmd_direct_cas_n : 1'b1;
+wire                       sdram_clke_next  = csr_pu;
+wire                       sdram_cs_n_next  = !(cmd_direct_push || scheduler_cmd_vld);
+wire [W_SDRAM_DATA/8-1:0]  sdram_dqm_next   = {W_SDRAM_DATA/8{1'b0}}; // Always asserted!
+wire                       sdram_ras_n_next = scheduler_cmd_vld ? scheduler_cmd_ras_n : cmd_direct_push ? cmd_direct_ras_n : 1'b1;
+wire                       sdram_we_n_next  = scheduler_cmd_vld ? scheduler_cmd_we_n  : cmd_direct_push ? cmd_direct_we_n  : 1'b1;
+
+// Delay line for read strobes
+localparam IO_ROUNDTRIP = 2;
+reg [N_MASTERS-1:0] dq_read_delay [0:IO_ROUNDTRIP-1];
+
+always @ (posedge clk or negedge rst_n) begin: io_delay_match
+	integer i;
+	if (!rst_n) begin
+		for (i = 0; i < IO_ROUNDTRIP; i = i + 1)
+			dq_read_delay[i] <= {N_MASTERS{1'b0}};
+	end else begin
+		dq_read_delay[0] <= scheduler_dq_read_vld;
+		for (i = 1; i < IO_ROUNDTRIP; i = i + 1)
+			dq_read_delay[i] = dq_read_delay[i - 1];
+	end
+end
+
+assign sdram_write_rdy = scheduler_dq_write_rdy;
+assign sdram_dq_oe_next = |scheduler_dq_write_rdy;
+assign sdram_read_vld = dq_read_delay[IO_ROUNDTRIP - 1];
 
 sdram_dq_buf dq_buf [W_SDRAM_DATA-1:0] (
 	.clk    (clk),
@@ -208,18 +337,5 @@ sdram_addr_buf ctrl_buf [W_SDRAM_BANKSEL + W_SDRAM_DATA / 8 + 5 - 1 : 0] (
 	.q     ({sdram_ba,      sdram_dqm,      sdram_clke,      sdram_cs_n,      sdram_ras_n,      sdram_cas_n,      sdram_we_n     })
 );
 
-// "Scheduling"
-
-assign sdram_dq_oe_next = 1'b0;
-assign sdram_dq_o_next = 16'h0;
-
-assign sdram_cs_n_next  = !cmd_direct_push;
-assign sdram_a_next     = cmd_direct_push ? cmd_direct_addr : {W_SDRAM_ADDR{1'b0}};
-assign sdram_ba_next    = cmd_direct_push ? cmd_direct_ba : {W_SDRAM_BANKSEL{1'b0}};
-assign sdram_dqm_next   = {W_SDRAM_DATA/8{1'b0}}; // Always asserted!
-assign sdram_clke_next  = csr_pu;
-assign sdram_ras_n_next = cmd_direct_push ? cmd_direct_ras_n : 1'b1;
-assign sdram_cas_n_next = cmd_direct_push ? cmd_direct_cas_n : 1'b1;
-assign sdram_we_n_next  = cmd_direct_push ? cmd_direct_we_n : 1'b1;
 
 endmodule
