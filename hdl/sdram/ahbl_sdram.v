@@ -46,6 +46,19 @@ module ahbl_sdram #(
 	parameter W_SDRAM_DATA       = 16,
 	parameter N_MASTERS          = 4,
 	parameter LEN_AHBL_BURST     = 4,
+
+	parameter FIXED_TIMINGS      = 0,
+	// Following are for AS4C32M16SB-7 at (aspirational) 80 MHz
+	parameter FIXED_TIME_RC       = 3'd4, // 63 ns 5 clk
+	parameter FIXED_TIME_RCD      = 3'd1, // 21 ns 2 clk
+	parameter FIXED_TIME_RP       = 3'd1, // 21 ns 2 clk
+	parameter FIXED_TIME_RRD      = 3'd1, // 14 ns 2 clk
+	parameter FIXED_TIME_RAS      = 3'd3, // 42 ns 4 clk
+	parameter FIXED_TIME_WR       = 3'd1, // 14 ns 2 clk
+	parameter FIXED_TIME_CAS      = 3'd2, // Programmed, 3 clk
+	parameter FIXED_TIME_REFRESH  = 12'd623, // 7.8 us 624 clk
+	parameter FIXED_TIME_COOLDOWN = 8'd30, // Tweakable parameter
+
 	parameter W_HADDR            = 32,
 	parameter W_HDATA            = 32  // Do not modify
 ) (
@@ -107,24 +120,17 @@ wire [1:0]  time_cas;
 wire [11:0] cfg_refresh_interval;
 wire [7:0]  cfg_row_cooldown;
 
-// TODO register this interface
-wire        cmd_direct_we_n;
-wire        cmd_direct_we_n_push;
-wire        cmd_direct_cas_n;
-wire        cmd_direct_cas_n_push;
-wire        cmd_direct_ras_n;
-wire        cmd_direct_ras_n_push;
-wire [12:0] cmd_direct_addr;
-wire        cmd_direct_addr_push;
-wire [1:0]  cmd_direct_ba;
-wire        cmd_direct_ba_push;
+wire        cmd_direct_we_n_next;
+wire        cmd_direct_cas_n_next;
+wire        cmd_direct_ras_n_next;
+wire [12:0] cmd_direct_addr_next;
+wire [1:0]  cmd_direct_ba_next;
 
-wire cmd_direct_push =
-	cmd_direct_we_n_push ||
-	cmd_direct_cas_n_push ||
-	cmd_direct_ras_n_push ||
-	cmd_direct_addr_push ||
-	cmd_direct_ba_push;
+wire        cmd_direct_we_n_push;
+wire        cmd_direct_cas_n_push;
+wire        cmd_direct_ras_n_push;
+wire        cmd_direct_addr_push;
+wire        cmd_direct_ba_push;
 
 sdram_regs regblock (
 	.clk                  (clk),
@@ -153,15 +159,15 @@ sdram_regs regblock (
 	.refresh_o            (cfg_refresh_interval),
 	.row_cooldown_o       (cfg_row_cooldown),
 
-	.cmd_direct_we_n_o    (cmd_direct_we_n),
+	.cmd_direct_we_n_o    (cmd_direct_we_n_next),
 	.cmd_direct_we_n_wen  (cmd_direct_we_n_push),
-	.cmd_direct_cas_n_o   (cmd_direct_cas_n),
+	.cmd_direct_cas_n_o   (cmd_direct_cas_n_next),
 	.cmd_direct_cas_n_wen (cmd_direct_cas_n_push),
-	.cmd_direct_ras_n_o   (cmd_direct_ras_n),
+	.cmd_direct_ras_n_o   (cmd_direct_ras_n_next),
 	.cmd_direct_ras_n_wen (cmd_direct_ras_n_push),
-	.cmd_direct_addr_o    (cmd_direct_addr),
+	.cmd_direct_addr_o    (cmd_direct_addr_next),
 	.cmd_direct_addr_wen  (cmd_direct_addr_push),
-	.cmd_direct_ba_o      (cmd_direct_ba),
+	.cmd_direct_ba_o      (cmd_direct_ba_next),
 	.cmd_direct_ba_wen    (cmd_direct_ba_push)
 );
 
@@ -248,15 +254,16 @@ sdram_scheduler #(
 	.clk                  (clk),
 	.rst_n                (rst_n),
 
-	.cfg_refresh_interval (cfg_refresh_interval),
-	.cfg_row_cooldown     (cfg_row_cooldown),
-	.time_rc              (time_rc),
-	.time_rcd             (time_rcd),
-	.time_rp              (time_rp),
-	.time_rrd             (time_rrd),
-	.time_ras             (time_ras),
-	.time_wr              (time_wr),
-	.time_cas             (time_cas),
+	.cfg_refresh_interval (FIXED_TIMINGS ? FIXED_TIME_REFRESH : cfg_refresh_interval),
+	.cfg_row_cooldown     (FIXED_TIMINGS ? FIXED_TIME_COOLDOWN : cfg_row_cooldown),
+
+	.time_rc              (FIXED_TIMINGS ? FIXED_TIME_RC  : time_rc),
+	.time_rcd             (FIXED_TIMINGS ? FIXED_TIME_RCD : time_rcd),
+	.time_rp              (FIXED_TIMINGS ? FIXED_TIME_RP  : time_rp),
+	.time_rrd             (FIXED_TIMINGS ? FIXED_TIME_RRD : time_rrd),
+	.time_ras             (FIXED_TIMINGS ? FIXED_TIME_RAS : time_ras),
+	.time_wr              (FIXED_TIMINGS ? FIXED_TIME_WR  : time_wr),
+	.time_cas             (FIXED_TIMINGS ? FIXED_TIME_CAS : time_cas),
 
 	.req_vld              (scheduler_req_vld),
 	.req_rdy              (scheduler_req_rdy),
@@ -278,6 +285,37 @@ sdram_scheduler #(
 
 // ----------------------------------------------------------------------------
 // IO interface
+
+reg                        cmd_direct_we_n;
+reg                        cmd_direct_cas_n;
+reg                        cmd_direct_ras_n;
+reg [W_SDRAM_ADDR-1:0]     cmd_direct_addr;
+reg [W_SDRAM_BANKSEL-1:0]  cmd_direct_ba;
+reg                        cmd_direct_push;
+
+always @ (posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		cmd_direct_we_n <= 1'b0;
+		cmd_direct_cas_n <= 1'b0;
+		cmd_direct_ras_n <= 1'b0;
+		cmd_direct_addr <= {W_SDRAM_ADDR{1'b0}};
+		cmd_direct_ba <= {W_SDRAM_BANKSEL{1'b0}};
+		cmd_direct_push <= 1'b0;
+	end else begin
+		cmd_direct_we_n <= cmd_direct_we_n_next;
+		cmd_direct_cas_n <= cmd_direct_cas_n_next;
+		cmd_direct_ras_n <= cmd_direct_ras_n_next;
+		cmd_direct_addr <= cmd_direct_addr_next;
+		cmd_direct_ba <= cmd_direct_ba_next;
+		cmd_direct_push <=
+			cmd_direct_we_n_push ||
+			cmd_direct_cas_n_push ||
+			cmd_direct_ras_n_push ||
+			cmd_direct_addr_push ||
+			cmd_direct_ba_push;
+	end
+end
+
 
 wire                       sdram_clk_enable = csr_pu; // This enables the toggling of sdram_clk, NOT the same as sdram_clke
 

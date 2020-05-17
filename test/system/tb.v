@@ -59,9 +59,22 @@ doomsoc_core #(
 	.uart_rx     (uart_rx)
 );
 
-always #(CLK_SYS_PERIOD) clk_sys = !clk_sys;
-always #(CLK_DVI_BIT_PERIOD) clk_dvi_bit = !clk_dvi_bit;
-always #(CLK_DVI_PIX_PERIOD) clk_dvi_pix = !clk_dvi_pix;
+mt48lc32m16a2 sdram_model (
+	.Dq    (sdram_dq),
+	.Addr  (sdram_a),
+	.Ba    (sdram_ba),
+	.Clk   (sdram_clk),
+	.Cke   (sdram_clke),
+	.Cs_n  (sdram_cs_n),
+	.Ras_n (sdram_ras_n),
+	.Cas_n (sdram_cas_n),
+	.We_n  (sdram_we_n),
+	.Dqm   (sdram_dqm)
+);
+
+always #(0.5 * CLK_SYS_PERIOD) clk_sys = !clk_sys;
+always #(0.5 * CLK_DVI_BIT_PERIOD) clk_dvi_bit = !clk_dvi_bit;
+always #(0.5 * CLK_DVI_PIX_PERIOD) clk_dvi_pix = !clk_dvi_pix;
 
 initial begin
 	clk_sys = 1'b0;

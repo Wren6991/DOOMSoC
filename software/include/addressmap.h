@@ -5,11 +5,15 @@
 #define SRAM_BASE (0x2ul << 28)
 #define SRAM_SIZE (8 * 1024)
 
-#define APB_BASE   (0x4ul << 28)
-#define UART_BASE  (APB_BASE + 0x0000)
-#define TBMAN_BASE (APB_BASE + 0xf000)
+#define APB_BASE        (0x4ul << 28)
+#define UART_BASE       (APB_BASE + 0x0000)
+#define SDRAM_CTRL_BASE (APB_BASE + 0x1000)
+#define BGEN_BASE       (APB_BASE + 0x2000)
+#define TBMAN_BASE      (APB_BASE + 0xf000)
 
 #ifndef __ASSEMBLER__
+
+#include <stdint.h>
 
 #define DECL_REG(addr, name) volatile uint32_t * const (name) = (volatile uint32_t*)(addr)
 

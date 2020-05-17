@@ -148,6 +148,15 @@ wire                uart_pslverr;
 
 wire                uart_irq;
 
+wire [W_PADDR-1:0]  sdram_paddr;
+wire                sdram_psel;
+wire                sdram_penable;
+wire                sdram_pwrite;
+wire [W_HDATA-1:0]  sdram_pwdata;
+wire                sdram_pready;
+wire [W_HDATA-1:0]  sdram_prdata;
+wire                sdram_pslverr;
+
 wire [W_PADDR-1:0]  tbman_paddr;
 wire                tbman_psel;
 wire                tbman_penable;
@@ -156,6 +165,96 @@ wire [W_HDATA-1:0]  tbman_pwdata;
 wire                tbman_pready;
 wire [W_HDATA-1:0]  tbman_prdata;
 wire                tbman_pslverr;
+
+
+// APB->AHBL burst generator
+
+wire [W_PADDR-1:0]  bgen0_paddr;
+wire                bgen0_psel;
+wire                bgen0_penable;
+wire                bgen0_pwrite;
+wire [W_HDATA-1:0]  bgen0_pwdata;
+wire                bgen0_pready;
+wire [W_HDATA-1:0]  bgen0_prdata;
+wire                bgen0_pslverr;
+
+wire [W_HADDR-1:0]  bgen0_haddr;
+wire                bgen0_hwrite;
+wire [1:0]          bgen0_htrans;
+wire [2:0]          bgen0_hsize;
+wire [2:0]          bgen0_hburst;
+wire [3:0]          bgen0_hprot;
+wire                bgen0_hmastlock;
+wire                bgen0_hready;
+wire                bgen0_hresp;
+wire [W_HDATA-1:0]  bgen0_hwdata;
+wire [W_HDATA-1:0]  bgen0_hrdata;
+
+
+wire [W_PADDR-1:0]  bgen1_paddr;
+wire                bgen1_psel;
+wire                bgen1_penable;
+wire                bgen1_pwrite;
+wire [W_HDATA-1:0]  bgen1_pwdata;
+wire                bgen1_pready;
+wire [W_HDATA-1:0]  bgen1_prdata;
+wire                bgen1_pslverr;
+
+wire [W_HADDR-1:0]  bgen1_haddr;
+wire                bgen1_hwrite;
+wire [1:0]          bgen1_htrans;
+wire [2:0]          bgen1_hsize;
+wire [2:0]          bgen1_hburst;
+wire [3:0]          bgen1_hprot;
+wire                bgen1_hmastlock;
+wire                bgen1_hready;
+wire                bgen1_hresp;
+wire [W_HDATA-1:0]  bgen1_hwdata;
+wire [W_HDATA-1:0]  bgen1_hrdata;
+
+
+wire [W_PADDR-1:0]  bgen2_paddr;
+wire                bgen2_psel;
+wire                bgen2_penable;
+wire                bgen2_pwrite;
+wire [W_HDATA-1:0]  bgen2_pwdata;
+wire                bgen2_pready;
+wire [W_HDATA-1:0]  bgen2_prdata;
+wire                bgen2_pslverr;
+
+wire [W_HADDR-1:0]  bgen2_haddr;
+wire                bgen2_hwrite;
+wire [1:0]          bgen2_htrans;
+wire [2:0]          bgen2_hsize;
+wire [2:0]          bgen2_hburst;
+wire [3:0]          bgen2_hprot;
+wire                bgen2_hmastlock;
+wire                bgen2_hready;
+wire                bgen2_hresp;
+wire [W_HDATA-1:0]  bgen2_hwdata;
+wire [W_HDATA-1:0]  bgen2_hrdata;
+
+
+wire [W_PADDR-1:0]  bgen3_paddr;
+wire                bgen3_psel;
+wire                bgen3_penable;
+wire                bgen3_pwrite;
+wire [W_HDATA-1:0]  bgen3_pwdata;
+wire                bgen3_pready;
+wire [W_HDATA-1:0]  bgen3_prdata;
+wire                bgen3_pslverr;
+
+wire [W_HADDR-1:0]  bgen3_haddr;
+wire                bgen3_hwrite;
+wire [1:0]          bgen3_htrans;
+wire [2:0]          bgen3_hsize;
+wire [2:0]          bgen3_hburst;
+wire [3:0]          bgen3_hprot;
+wire                bgen3_hmastlock;
+wire                bgen3_hready;
+wire                bgen3_hresp;
+wire [W_HDATA-1:0]  bgen3_hwdata;
+wire [W_HDATA-1:0]  bgen3_hrdata;
 
 // ----------------------------------------------------------------------------
 // Processor instantiation + integration
@@ -375,9 +474,9 @@ ahbl_to_apb #(
 apb_splitter #(
 	.W_ADDR    (W_PADDR),
 	.W_DATA    (W_HDATA),
-	.N_SLAVES  (2),
-	.ADDR_MAP  ({16'hf000 , 16'h0000}),
-	.ADDR_MASK ({16'hf000 , 16'hf000})
+	.N_SLAVES  (7),
+	.ADDR_MAP  ({16'hf000 , 16'h5000 , 16'h4000 , 16'h3000 , 16'h2000 , 16'h1000 , 16'h0000}),
+	.ADDR_MASK ({16'hf000 , 16'hf000 , 16'hf000 , 16'hf000 , 16'hf000 , 16'hf000 , 16'hf000})
 ) inst_apb_splitter (
 	.apbs_paddr   (bridge_paddr),
 	.apbs_psel    (bridge_psel),
@@ -388,14 +487,14 @@ apb_splitter #(
 	.apbs_prdata  (bridge_prdata),
 	.apbs_pslverr (bridge_pslverr),
 
-	.apbm_paddr   ({tbman_paddr   , uart_paddr  }),
-	.apbm_psel    ({tbman_psel    , uart_psel   }),
-	.apbm_penable ({tbman_penable , uart_penable}),
-	.apbm_pwrite  ({tbman_pwrite  , uart_pwrite }),
-	.apbm_pwdata  ({tbman_pwdata  , uart_pwdata }),
-	.apbm_pready  ({tbman_pready  , uart_pready }),
-	.apbm_prdata  ({tbman_prdata  , uart_prdata }),
-	.apbm_pslverr ({tbman_pslverr , uart_pslverr})
+	.apbm_paddr   ({tbman_paddr   , bgen3_paddr   , bgen2_paddr   , bgen1_paddr   , bgen0_paddr   , sdram_paddr   , uart_paddr  }),
+	.apbm_psel    ({tbman_psel    , bgen3_psel    , bgen2_psel    , bgen1_psel    , bgen0_psel    , sdram_psel    , uart_psel   }),
+	.apbm_penable ({tbman_penable , bgen3_penable , bgen2_penable , bgen1_penable , bgen0_penable , sdram_penable , uart_penable}),
+	.apbm_pwrite  ({tbman_pwrite  , bgen3_pwrite  , bgen2_pwrite  , bgen1_pwrite  , bgen0_pwrite  , sdram_pwrite  , uart_pwrite }),
+	.apbm_pwdata  ({tbman_pwdata  , bgen3_pwdata  , bgen2_pwdata  , bgen1_pwdata  , bgen0_pwdata  , sdram_pwdata  , uart_pwdata }),
+	.apbm_pready  ({tbman_pready  , bgen3_pready  , bgen2_pready  , bgen1_pready  , bgen0_pready  , sdram_pready  , uart_pready }),
+	.apbm_prdata  ({tbman_prdata  , bgen3_prdata  , bgen2_prdata  , bgen1_prdata  , bgen0_prdata  , sdram_prdata  , uart_prdata }),
+	.apbm_pslverr ({tbman_pslverr , bgen3_pslverr , bgen2_pslverr , bgen1_pslverr , bgen0_pslverr , sdram_pslverr , uart_pslverr})
 );
 
 
@@ -423,6 +522,64 @@ ahb_sync_sram #(
 	.ahbls_hwdata      (sram_hwdata),
 	.ahbls_hrdata      (sram_hrdata)
 );
+
+ahbl_sdram #(
+	.COLUMN_BITS     (10),
+	.ROW_BITS        (13),
+	.W_SDRAM_BANKSEL (2),
+	.W_SDRAM_ADDR    (13),
+	.W_SDRAM_DATA    (16),
+	.N_MASTERS       (4),
+	.LEN_AHBL_BURST  (4),
+	.FIXED_TIMINGS   (1),
+	// Following are for AS4C32M16SB-7 at (aspirational) 80 MHz
+	.FIXED_TIME_RC         (3'd4   ), // 63 ns 5 clk
+	.FIXED_TIME_RCD        (3'd1   ), // 21 ns 2 clk
+	.FIXED_TIME_RP         (3'd1   ), // 21 ns 2 clk
+	.FIXED_TIME_RRD        (3'd1   ), // 14 ns 2 clk
+	.FIXED_TIME_RAS        (3'd3   ), // 42 ns 4 clk
+	.FIXED_TIME_WR         (3'd1   ), // 14 ns 2 clk
+	.FIXED_TIME_CAS        (3'd2   ), // Programmed, 3 clk
+	.FIXED_TIME_REFRESH    (12'd623), // 7.8 us 624 clk
+	.FIXED_TIME_COOLDOWN   (8'd30  )  // Tweakable parameter
+) inst_ahbl_sdram (
+	.clk               (clk_sys),
+	.rst_n             (rst_n_sys),
+
+	.sdram_clk         (sdram_clk),
+	.sdram_a           (sdram_a),
+	.sdram_dq          (sdram_dq),
+	.sdram_ba          (sdram_ba),
+	.sdram_dqm         (sdram_dqm),
+	.sdram_clke        (sdram_clke),
+	.sdram_cs_n        (sdram_cs_n),
+	.sdram_ras_n       (sdram_ras_n),
+	.sdram_cas_n       (sdram_cas_n),
+	.sdram_we_n        (sdram_we_n),
+
+	.apbs_psel         (sdram_psel),
+	.apbs_penable      (sdram_penable),
+	.apbs_pwrite       (sdram_pwrite),
+	.apbs_paddr        (sdram_paddr),
+	.apbs_pwdata       (sdram_pwdata),
+	.apbs_prdata       (sdram_prdata),
+	.apbs_pready       (sdram_pready),
+	.apbs_pslverr      (sdram_pslverr),
+
+	.ahbls_hready      ({bgen3_hready    , bgen2_hready    , bgen1_hready    , bgen0_hready    }),
+	.ahbls_hready_resp ({bgen3_hready    , bgen2_hready    , bgen1_hready    , bgen0_hready    }),
+	.ahbls_hresp       ({bgen3_hresp     , bgen2_hresp     , bgen1_hresp     , bgen0_hresp     }),
+	.ahbls_haddr       ({bgen3_haddr     , bgen2_haddr     , bgen1_haddr     , bgen0_haddr     }),
+	.ahbls_hwrite      ({bgen3_hwrite    , bgen2_hwrite    , bgen1_hwrite    , bgen0_hwrite    }),
+	.ahbls_htrans      ({bgen3_htrans    , bgen2_htrans    , bgen1_htrans    , bgen0_htrans    }),
+	.ahbls_hsize       ({bgen3_hsize     , bgen2_hsize     , bgen1_hsize     , bgen0_hsize     }),
+	.ahbls_hburst      ({bgen3_hburst    , bgen2_hburst    , bgen1_hburst    , bgen0_hburst    }),
+	.ahbls_hprot       ({bgen3_hprot     , bgen2_hprot     , bgen1_hprot     , bgen0_hprot     }),
+	.ahbls_hmastlock   ({bgen3_hmastlock , bgen2_hmastlock , bgen1_hmastlock , bgen0_hmastlock }),
+	.ahbls_hwdata      ({bgen3_hwdata    , bgen2_hwdata    , bgen1_hwdata    , bgen0_hwdata    }),
+	.ahbls_hrdata      ({bgen3_hrdata    , bgen2_hrdata    , bgen1_hrdata    , bgen0_hrdata    })
+);
+
 
 // ----------------------------------------------------------------------------
 // Peripherals
@@ -461,5 +618,122 @@ tbman inst_tbman (
 	.apbs_pready  (tbman_pready),
 	.apbs_pslverr (tbman_pslverr)
 );
+
+apb_burst_gen #(
+	.W_ADDR(W_HADDR),
+	.W_DATA(W_HDATA)
+) bgen0 (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.apbs_psel       (bgen0_psel),
+	.apbs_penable    (bgen0_penable),
+	.apbs_pwrite     (bgen0_pwrite),
+	.apbs_paddr      (bgen0_paddr),
+	.apbs_pwdata     (bgen0_pwdata),
+	.apbs_prdata     (bgen0_prdata),
+	.apbs_pready     (bgen0_pready),
+	.apbs_pslverr    (bgen0_pslverr),
+
+	.ahblm_haddr     (bgen0_haddr),
+	.ahblm_hwrite    (bgen0_hwrite),
+	.ahblm_htrans    (bgen0_htrans),
+	.ahblm_hsize     (bgen0_hsize),
+	.ahblm_hburst    (bgen0_hburst),
+	.ahblm_hprot     (bgen0_hprot),
+	.ahblm_hmastlock (bgen0_hmastlock),
+	.ahblm_hready    (bgen0_hready),
+	.ahblm_hresp     (bgen0_hresp),
+	.ahblm_hwdata    (bgen0_hwdata),
+	.ahblm_hrdata    (bgen0_hrdata)
+);
+
+apb_burst_gen #(
+	.W_ADDR(W_HADDR),
+	.W_DATA(W_HDATA)
+) bgen1 (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.apbs_psel       (bgen1_psel),
+	.apbs_penable    (bgen1_penable),
+	.apbs_pwrite     (bgen1_pwrite),
+	.apbs_paddr      (bgen1_paddr),
+	.apbs_pwdata     (bgen1_pwdata),
+	.apbs_prdata     (bgen1_prdata),
+	.apbs_pready     (bgen1_pready),
+	.apbs_pslverr    (bgen1_pslverr),
+
+	.ahblm_haddr     (bgen1_haddr),
+	.ahblm_hwrite    (bgen1_hwrite),
+	.ahblm_htrans    (bgen1_htrans),
+	.ahblm_hsize     (bgen1_hsize),
+	.ahblm_hburst    (bgen1_hburst),
+	.ahblm_hprot     (bgen1_hprot),
+	.ahblm_hmastlock (bgen1_hmastlock),
+	.ahblm_hready    (bgen1_hready),
+	.ahblm_hresp     (bgen1_hresp),
+	.ahblm_hwdata    (bgen1_hwdata),
+	.ahblm_hrdata    (bgen1_hrdata)
+);
+
+apb_burst_gen #(
+	.W_ADDR(W_HADDR),
+	.W_DATA(W_HDATA)
+) bgen2 (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.apbs_psel       (bgen2_psel),
+	.apbs_penable    (bgen2_penable),
+	.apbs_pwrite     (bgen2_pwrite),
+	.apbs_paddr      (bgen2_paddr),
+	.apbs_pwdata     (bgen2_pwdata),
+	.apbs_prdata     (bgen2_prdata),
+	.apbs_pready     (bgen2_pready),
+	.apbs_pslverr    (bgen2_pslverr),
+
+	.ahblm_haddr     (bgen2_haddr),
+	.ahblm_hwrite    (bgen2_hwrite),
+	.ahblm_htrans    (bgen2_htrans),
+	.ahblm_hsize     (bgen2_hsize),
+	.ahblm_hburst    (bgen2_hburst),
+	.ahblm_hprot     (bgen2_hprot),
+	.ahblm_hmastlock (bgen2_hmastlock),
+	.ahblm_hready    (bgen2_hready),
+	.ahblm_hresp     (bgen2_hresp),
+	.ahblm_hwdata    (bgen2_hwdata),
+	.ahblm_hrdata    (bgen2_hrdata)
+);
+
+apb_burst_gen #(
+	.W_ADDR(W_HADDR),
+	.W_DATA(W_HDATA)
+) bgen3 (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.apbs_psel       (bgen3_psel),
+	.apbs_penable    (bgen3_penable),
+	.apbs_pwrite     (bgen3_pwrite),
+	.apbs_paddr      (bgen3_paddr),
+	.apbs_pwdata     (bgen3_pwdata),
+	.apbs_prdata     (bgen3_prdata),
+	.apbs_pready     (bgen3_pready),
+	.apbs_pslverr    (bgen3_pslverr),
+
+	.ahblm_haddr     (bgen3_haddr),
+	.ahblm_hwrite    (bgen3_hwrite),
+	.ahblm_htrans    (bgen3_htrans),
+	.ahblm_hsize     (bgen3_hsize),
+	.ahblm_hburst    (bgen3_hburst),
+	.ahblm_hprot     (bgen3_hprot),
+	.ahblm_hmastlock (bgen3_hmastlock),
+	.ahblm_hready    (bgen3_hready),
+	.ahblm_hresp     (bgen3_hresp),
+	.ahblm_hwdata    (bgen3_hwdata),
+	.ahblm_hrdata    (bgen3_hrdata)
+);
+
 
 endmodule

@@ -58,7 +58,7 @@ endtask
 
 
 // Must start on a clock negedge with hready high
-task ahbl_wrap4_write;
+task automatic ahbl_wrap4_write;
 	input integer master;
 	input [31:0] addr;
 	input [127:0] data;
@@ -81,7 +81,7 @@ begin
 end
 endtask
 
-task ahbl_wrap4_read;
+task automatic ahbl_wrap4_read;
 	input integer master;
 	input [31:0] addr;
 	output [127:0] data;

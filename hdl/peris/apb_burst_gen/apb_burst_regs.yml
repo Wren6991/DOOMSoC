@@ -1,0 +1,34 @@
+name: apb_burst
+bus: apb
+addr: 16
+data: 32
+regs:
+  - name: csr
+    info: Control and status register
+    bits:
+      - {b: 0, name: ready, access: rov, info:
+          "If 1, indicates the most recent command has completed.
+          Read data will be available in DATA registers."
+        }
+      - {b: 1, name: read, access: sc, info: "Write 1 to start a read cycle."}
+      - {b: 2, name: write, access: sc, info: "Write 1 to start a write cycle."}
+  - name: addr
+    info: "Address of first beat in WRAP4 burst"
+    bits:
+      - {b: [31, 0], access: rw}
+  - name: data0
+    info: "Data for/from first beat of WRAP4 burst"
+    bits:
+      - {b: [31, 0], access: rwf}
+  - name: data1
+    info: "Data for/from second beat of WRAP4 burst"
+    bits:
+      - {b: [31, 0], access: rwf}
+  - name: data2
+    info: "Data for/from third beat of WRAP4 burst"
+    bits:
+      - {b: [31, 0], access: rwf}
+  - name: data3
+    info: "Data for/from fourth beat of WRAP4 burst"
+    bits:
+      - {b: [31, 0], access: rwf}
