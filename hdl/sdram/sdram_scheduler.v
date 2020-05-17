@@ -208,9 +208,9 @@ always @ (posedge clk or negedge rst_n) begin: timing_scoreboard_update
 					ctr_pre_to_ras[i] <= time_rp;
 				end
 				if (cmd == CMD_WRITE && cmd_banksel == i) begin
-					ctr_cas_to_pre[i] <= BURST_LEN + time_wr;
+					ctr_cas_to_pre[i] <= BURST_LEN - 1 + time_wr;
 				end else if (cmd == CMD_READ && cmd_banksel == i) begin
-					ctr_cas_to_pre[i] <= BURST_LEN + time_cas;
+					ctr_cas_to_pre[i] <= BURST_LEN - 1;
 				end
 			end
 			if (cmd == CMD_ACTIVATE) begin
@@ -321,7 +321,12 @@ always @ (*) begin: check_can_issue_write
 end
 
 // Can issue read if DQs are free from tCAS to tCAS + BURST_LEN - 1, and there
-// was no write on tCAS - 1.
+// was no write on tCAS - 1. (turnaround/contention)
+//
+// Additionally make sure that there is no *write* cycle specifcally on the
+// current cycle, as issuing a Read at any point during a Write burst seems to
+// terminate the Write (not clear from documentation but this is how the
+// MT48LC32M16 vendor model behaves)
 reg can_issue_read;
 always @ (*) begin: check_can_issue_read
 	integer i;
@@ -330,6 +335,7 @@ always @ (*) begin: check_can_issue_read
 		can_issue_read = can_issue_read && !(read_cycle_mask[i] && dq_schedule[i][W_DQ_RECORD-1]);
 	end	
 	can_issue_read = can_issue_read && dq_schedule[time_cas][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
+	can_issue_read = can_issue_read && dq_schedule[1][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
 end
 
 // ----------------------------------------------------------------------------
