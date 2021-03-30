@@ -231,15 +231,15 @@ ahbl_sdram_bus_interface #(
 // ----------------------------------------------------------------------------
 // SDRAM scheduler
 
-wire [W_SDRAM_ADDR-1:0]    scheduler_cmd_a;
-wire [W_SDRAM_BANKSEL-1:0] scheduler_cmd_ba;
-wire                       scheduler_cmd_vld;
-wire                       scheduler_cmd_ras_n;
-wire                       scheduler_cmd_cas_n;
-wire                       scheduler_cmd_we_n;
+wire [W_SDRAM_ADDR-1:0]    scheduler_cmd_a_next;
+wire [W_SDRAM_BANKSEL-1:0] scheduler_cmd_ba_next;
+wire                       scheduler_cmd_vld_next;
+wire                       scheduler_cmd_ras_n_next;
+wire                       scheduler_cmd_cas_n_next;
+wire                       scheduler_cmd_we_n_next;
 
-wire [N_MASTERS-1:0]       scheduler_dq_write_rdy;
-wire [N_MASTERS-1:0]       scheduler_dq_read_vld;
+wire [N_MASTERS-1:0]       scheduler_dq_write_rdy_next;
+wire [N_MASTERS-1:0]       scheduler_dq_read_vld_next;
 
 sdram_scheduler #(
 	.N_REQ          (N_MASTERS),
@@ -272,16 +272,52 @@ sdram_scheduler #(
 	.req_caddr            (scheduler_req_caddr),
 	.req_write            (scheduler_req_write),
 
-	.cmd_vld              (scheduler_cmd_vld),
-	.cmd_ras_n            (scheduler_cmd_ras_n),
-	.cmd_cas_n            (scheduler_cmd_cas_n),
-	.cmd_we_n             (scheduler_cmd_we_n),
-	.cmd_addr             (scheduler_cmd_a),
-	.cmd_banksel          (scheduler_cmd_ba),
+	.cmd_vld              (scheduler_cmd_vld_next),
+	.cmd_ras_n            (scheduler_cmd_ras_n_next),
+	.cmd_cas_n            (scheduler_cmd_cas_n_next),
+	.cmd_we_n             (scheduler_cmd_we_n_next),
+	.cmd_addr             (scheduler_cmd_a_next),
+	.cmd_banksel          (scheduler_cmd_ba_next),
 
-	.dq_write             (scheduler_dq_write_rdy),
-	.dq_read              (scheduler_dq_read_vld)
+	.dq_write             (scheduler_dq_write_rdy_next),
+	.dq_read              (scheduler_dq_read_vld_next)
 );
+
+// Scheduler pipe stage is useful because dq_write is generated simultaneously
+// with command decode (so uses bank state scoreboard etc), and is then used
+// to mux hwdata and generate hready_resp.
+
+reg [W_SDRAM_ADDR-1:0]    scheduler_cmd_a;
+reg [W_SDRAM_BANKSEL-1:0] scheduler_cmd_ba;
+reg                       scheduler_cmd_vld;
+reg                       scheduler_cmd_ras_n;
+reg                       scheduler_cmd_cas_n;
+reg                       scheduler_cmd_we_n;
+
+reg [N_MASTERS-1:0]       scheduler_dq_write_rdy;
+reg [N_MASTERS-1:0]       scheduler_dq_read_vld;
+
+always @ (posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		scheduler_cmd_a        <= {W_SDRAM_ADDR{1'b0}};
+		scheduler_cmd_ba       <= {W_SDRAM_BANKSEL{1'b0}};
+		scheduler_cmd_vld      <= 1'b0;
+		scheduler_cmd_ras_n    <= 1'b0;
+		scheduler_cmd_cas_n    <= 1'b0;
+		scheduler_cmd_we_n     <= 1'b0;
+		scheduler_dq_write_rdy <= {N_MASTERS{1'b0}};
+		scheduler_dq_read_vld  <= {N_MASTERS{1'b0}};
+	end else begin
+		scheduler_cmd_a        <= scheduler_cmd_a_next;
+		scheduler_cmd_ba       <= scheduler_cmd_ba_next;
+		scheduler_cmd_vld      <= scheduler_cmd_vld_next;
+		scheduler_cmd_ras_n    <= scheduler_cmd_ras_n_next;
+		scheduler_cmd_cas_n    <= scheduler_cmd_cas_n_next;
+		scheduler_cmd_we_n     <= scheduler_cmd_we_n_next;
+		scheduler_dq_write_rdy <= scheduler_dq_write_rdy_next;
+		scheduler_dq_read_vld  <= scheduler_dq_read_vld_next;
+	end
+end
 
 // ----------------------------------------------------------------------------
 // IO interface

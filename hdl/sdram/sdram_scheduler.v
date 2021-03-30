@@ -22,89 +22,6 @@
 // - Generates SDRAM commands to satisfy read/write burst requests coming in
 //   from the system bus
 // - Generates enable signals for DQ launch and capture
-//
-// A bank is either idle or active.
-//
-// There are a number of counters that inhibit its transition between these
-// states (e.g. waiting for tRAS to expire before a RowActivate), or inhibit
-// the issue of read/write bursts once it is in the active state (waiting for
-// tRCD to expire).
-//
-// Row precharging may also be inhibited by an imminent or in-progress burst
-// on that row.
-//
-// We can issue up to one command per cycle. Apply a simple priority rule to
-// decide what this command is:
-// - A refresh is highest priority. It's possible to add leeway to this, but
-//   currently an unconvincing performance/complexity trade
-// - A read/write burst on an open row
-// - A Precharge due to row miss
-// - A RowActivate
-// - A Precharge due to row cooldown expiry
-//
-// In case we later add multiple request sources, we would still assess each
-// of these stages in the same order, but each stage would consider each
-// requestor in their own priority order.
-
-// STRAWMAN 1
-//
-// Say there are b banks and m masters (including dummy master for row timeout
-// precharge). There are 3 operations a master may perform on a bank, in
-// descending priority order:
-//
-// - Burst (on page hit)
-// - Precharge (on page miss)
-// - Activate (on page empty)
-//
-// and these form a onehot0 vector for each master.
-//
-// 1. Form (b * m * 3) 3D mask of requests by decoding master read/write requests
-//    against bank states (IDLE/ACTIVE + row address, for each bank) and demuxing
-//    based on master bank select
-//
-// 2. For each bank, OR together all master operation vectors (collapse along
-//    master axis), perform priority select, then AND each operation vector for
-//    the bank with this mask (this avoids self-sabotage by e.g. precharging a
-//    row we will want to burst on once DQs are free)
-//
-// 3. Use timing constraint counters and DQ schedule to generate a 2D mask of
-//    what operations are *possible* for each bank on this cycle, and apply this
-//    mask to all masters for each operation/bank combination.
-//
-// 4. Collapse the request matrix along the bank axis using reduction OR
-//
-// 5. Reduce the new matrix along the master axis to produce a mask of
-//    (desired && possible) operations. Priority-select this, and use it to mask,
-//    then crosswise reduce the matrix. We now have a vector of masters who want
-//    to perform the highest-priority (desired && possible) operation on this cycle.
-//
-// 6. Priority select this to choose the winning master, and look back to our
-//    bank decode to figure out which command to issue to which bank.
-//
-// We update the bank states, constraint counters and DQ schedule based on the
-// chosen operation. The master request is left unacknowledged for
-// Activate/Precharge operations, and acknowledged for Read/Write operations.
-//
-// Problems with this:
-//
-// - Holy complexity batman (tho the logic should pack down quite nicely)
-//
-// - If we precharge on page miss, and then the (higher priority) master who
-//   had the page open returns, we will end up reactivating the original row.
-//   This thrashes the bank and causes the low priority master to make no
-//   progress at all.
-//
-// - Bursts should preferentially be followed by bursts of the same type to
-//   minimise turnaround periods
-//
-// Second can be fixed by adding a new operation type: Activate (miss), which
-// is higher priority than Activate (empty), and asserted by a per-master flag
-// we set when precharging. This means we COMMIT to a miss dammit
-//
-// Another refinement: there is no need to distinguish between Precharge
-// (Miss) and Activate (Empty) -- these can be the same bit in the decision
-// rule. However, Activate (Miss) should be separate from (and higher priority
-// than) Activate (Empty).
 
 module sdram_scheduler #(
 	parameter N_REQ          = 4,
@@ -256,6 +173,7 @@ end
 // actual read timing may need to be adjusted later to match the delay of the
 // launch and capture registers, but this is someone else's problem.
 
+wire [N_REQ-1:0] current_req;
 
 // burst len + max CAS + 1 extra for previous cycle
 localparam DQ_SCHEDULE_LEN = BURST_LEN + 4 + 1;
@@ -276,7 +194,7 @@ end else begin: big_record
 	onehot_encoder #(
 		.W_INPUT (N_REQ)
 	) req_encode (
-		.in  (highest_master_with_highest_op),
+		.in  (current_req),
 		.out (reqsel)
 	);
 	assign write_record = {2'b10, reqsel};
@@ -310,14 +228,14 @@ end
 
 // Can issue write if DQs are free for the next BURST_LEN cycles (including
 // this cycle), and there was no read on the previous cycle.
-reg can_issue_write;
-always @ (*) begin: check_can_issue_write
+reg dq_write_contention_ok;
+always @ (*) begin: check_dq_write_contention_ok
 	integer i;
-	can_issue_write = 1'b1;
+	dq_write_contention_ok = 1'b1;
 	for (i = 1; i < BURST_LEN + 1; i = i + 1) begin
-		can_issue_write = can_issue_write && !dq_schedule[i][W_DQ_RECORD-1];
+		dq_write_contention_ok = dq_write_contention_ok && !dq_schedule[i][W_DQ_RECORD-1];
 	end
-	can_issue_write = can_issue_write && dq_schedule[0][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b11;
+	dq_write_contention_ok = dq_write_contention_ok && dq_schedule[0][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b11;
 end
 
 // Can issue read if DQs are free from tCAS to tCAS + BURST_LEN - 1, and there
@@ -327,163 +245,56 @@ end
 // current cycle, as issuing a Read at any point during a Write burst seems to
 // terminate the Write (not clear from documentation but this is how the
 // MT48LC32M16 vendor model behaves)
-reg can_issue_read;
-always @ (*) begin: check_can_issue_read
+reg dq_read_contention_ok;
+always @ (*) begin: check_dq_read_contention_ok
 	integer i;
-	can_issue_read = 1'b1;
+	dq_read_contention_ok = 1'b1;
 	for (i = 0; i < DQ_SCHEDULE_LEN; i = i + 1) begin
-		can_issue_read = can_issue_read && !(read_cycle_mask[i] && dq_schedule[i][W_DQ_RECORD-1]);
+		dq_read_contention_ok = dq_read_contention_ok && !(read_cycle_mask[i] && dq_schedule[i][W_DQ_RECORD-1]);
 	end	
-	can_issue_read = can_issue_read && dq_schedule[time_cas][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
-	can_issue_read = can_issue_read && dq_schedule[1][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
+	dq_read_contention_ok = dq_read_contention_ok && dq_schedule[time_cas][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
+	dq_read_contention_ok = dq_read_contention_ok && dq_schedule[1][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
 end
 
 // ----------------------------------------------------------------------------
-// Decision rules
+// Arbitration/queueing
 
-// This is what we are trying to figure out:
-wire [N_REQ-1:0] highest_master_with_highest_op;
+// We process one request at a time, with simple priority selection. Down the
+// line it might be profitable to look one transfer ahead, for better bank
+// concurrency, but let's keep it simple for now.
 
-// Remember if a master caused a Precharge on page miss, so we follow up with
-// an Activate from the *same* master in preference to others on that bank.
-reg [N_REQ-1:0] master_has_precharged;
-wire [N_REQ-1:0] master_precharge = highest_master_with_highest_op & {N_REQ{cmd_vld && cmd == CMD_PRECHARGE}};
-wire [N_REQ-1:0] master_activate = highest_master_with_highest_op & {N_REQ{cmd_vld && cmd == CMD_ACTIVATE}};
-
-always @ (posedge clk or negedge rst_n) begin
-	if (!rst_n) begin
-		master_has_precharged <= {N_REQ{1'b0}};
-	end else begin
-		master_has_precharged <= (master_has_precharged | master_precharge) & ~master_activate;
-	end
-end
-
-localparam N_OPS = 3;
-// Group operations into 3 classes. These are in descending priority order: if
-// a class is desired for any given bank, any lesser operation class will *not* be
-// considered. The classes are:
-//
-// 0. Read/write burst (page hit)
-// 1. Activate following page miss
-// 2. Precharge on page miss, or Activate on page empty
-
-// Form a matrix of things we *want* to do on this cycle, based on master
-// requests and bank state
-
-reg [N_OPS-1:0] desired [0:N_BANKS-1] [0:N_REQ-1];
-
-always @ (*) begin: decode_desired
-	integer bank, master;
-	for (bank = 0; bank < N_BANKS; bank = bank + 1) begin
-		for (master = 0; master < N_REQ; master = master + 1) begin
-			desired[bank][master] = {
-				// 2. Precharge on page miss, or Activate on page empty
-				req_vld[master] && (bank_active[bank] ? bank_active_row[bank] != req_raddr[master * W_RADDR +: W_RADDR] : 1'b1),
-				// 1. Activate following page miss
-				master_has_precharged[master],
-				// 0. Read/write burst
-				req_vld[master] && bank_active[bank] && bank_active_row[bank] == req_raddr[master * W_RADDR +: W_RADDR]
-			} & {N_OPS{req_banksel[master * W_BANKSEL +: W_BANKSEL] == bank}};
-		end
-	end
-end
-
-// Form a matrix of operations which are *possible* for each bank, based on
-// bank state and timing constraints
-
-reg [N_OPS-1:0] bank_possible [0:N_BANKS-1];
-
-always @ (*) begin: decode_bank_possible
-	integer bank;
-	for (bank = 0; bank < N_BANKS; bank = bank + 1) begin
-		bank_possible[bank] = {
-			// 2. Precharge must respect tRAS, tWR. Activate must respect tRC, tRP, tRRD
-			bank_active[bank] ?
-				~|{ctr_ras_to_pre[bank], ctr_cas_to_pre[bank]}:
-				~|{ctr_ras_to_ras_any, ctr_ras_to_ras_same[bank], ctr_pre_to_ras[bank]},
-			// 1. Activate must respect tRC, tRP, tRRD
-			~|{ctr_ras_to_ras_any, ctr_ras_to_ras_same[bank], ctr_pre_to_ras[bank]},
-			// 0. Bursts must respect tRCD. Must also respect bus turnaround and
-			// contention, but that is not bank-specific.
-			~|ctr_ras_to_cas[bank]
-		};
-	end
-end
-
-// Filter based on bank possibilities and bus state to find which ops are
-// desired AND possible for each master
-
-reg [N_OPS-1:0] desired_and_possible [0:N_REQ-1];
-
-always @ (*) begin: filter_desired
-	integer bank, master;
-	for (master = 0; master < N_REQ; master = master + 1) begin
-		desired_and_possible[master] = {N_OPS{1'b0}};
-		for (bank = 0; bank < N_BANKS; bank = bank + 1) begin
-			desired_and_possible[master] = desired_and_possible[master] | (
-				desired[bank][master] & bank_possible[bank]
-			);
-		end
-		// Apply bus contention and turnaround constraints
-		desired_and_possible[master] = desired_and_possible[master] & {2'b11,
-			req_write[master] ? can_issue_write : can_issue_read
-		};
-	end
-end
-
-// Find the highest-tiered operation class which *some* master wishes to perform
-
-reg [N_OPS-1:0] op_has_active_master;
-wire [N_OPS-1:0] highest_active_op;
-
-always @ (*) begin: find_active_ops
-	integer i;
-	op_has_active_master = {N_OPS{1'b0}};
-	for (i = 0; i < N_REQ; i = i + 1) begin
-		op_has_active_master = op_has_active_master | desired_and_possible[i];
-	end
-end
-
-onehot_priority #(
-	.W_INPUT (N_OPS)
-) highest_op_sel (
-	.in  (op_has_active_master),
-	.out (highest_active_op)
-);
-
-// Find the highest-priority master requesting this op
-
-reg [N_REQ-1:0] masters_with_highest_op;
-
-always @ (*) begin: find_masters_with_highest_op
-	integer i;
-	for (i = 0; i < N_REQ; i = i + 1) begin
-		masters_with_highest_op[i] = |(desired_and_possible[i] & highest_active_op);
-	end
-end
+wire [N_REQ-1:0] current_req_comb;
+reg  [N_REQ-1:0] current_req_hold;
+assign current_req = |current_req_hold ? current_req_hold : current_req_comb;
 
 onehot_priority #(
 	.W_INPUT (N_REQ)
-) highest_master_sel (
-	.in  (masters_with_highest_op),
-	.out (highest_master_with_highest_op)
+) req_priority_sel (
+	.in  (req_vld),
+	.out (current_req_comb)
 );
 
-// ----------------------------------------------------------------------------
-// Command generation
+always @ (posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		current_req_hold <= {N_REQ{1'b0}};
+	end else begin
+		current_req_hold <= |req_rdy ? {N_REQ{1'b0}} : current_req;
+	end
+end
 
-wire [W_RADDR-1:0]   muxed_raddr;
-wire [W_BANKSEL-1:0] muxed_banksel;
-wire [W_CADDR-1:0]   muxed_caddr;
-wire                 muxed_write;
+// ... and mux in the attributes of that request:
+wire [W_RADDR-1:0]   current_req_raddr;
+wire [W_BANKSEL-1:0] current_req_banksel;
+wire [W_CADDR-1:0]   current_req_caddr;
+wire                 current_req_write;
 
 onehot_mux #(
 	.N_INPUTS (N_REQ),
 	.W_INPUT  (W_RADDR)
 ) raddr_mux (
 	.in  (req_raddr),
-	.sel (highest_master_with_highest_op),
-	.out (muxed_raddr)
+	.sel (current_req),
+	.out (current_req_raddr)
 );
 
 onehot_mux #(
@@ -491,8 +302,8 @@ onehot_mux #(
 	.W_INPUT  (W_BANKSEL)
 ) banksel_mux (
 	.in  (req_banksel),
-	.sel (highest_master_with_highest_op),
-	.out (muxed_banksel)
+	.sel (current_req),
+	.out (current_req_banksel)
 );
 
 onehot_mux #(
@@ -500,8 +311,8 @@ onehot_mux #(
 	.W_INPUT  (W_CADDR)
 ) caddr_mux (
 	.in  (req_caddr),
-	.sel (highest_master_with_highest_op),
-	.out (muxed_caddr)
+	.sel (current_req),
+	.out (current_req_caddr)
 );
 
 onehot_mux #(
@@ -509,20 +320,52 @@ onehot_mux #(
 	.W_INPUT  (1)
 ) write_mux (
 	.in  (req_write),
-	.sel (highest_master_with_highest_op),
-	.out (muxed_write)
+	.sel (current_req),
+	.out (current_req_write)
 );
 
-assign cmd_vld = |highest_master_with_highest_op;
+// ----------------------------------------------------------------------------
+// Command generation
+
 assign {cmd_ras_n, cmd_cas_n, cmd_we_n} =
-	!bank_active[muxed_banksel]                   ? CMD_ACTIVATE  :
-	bank_active_row[muxed_banksel] != muxed_raddr ? CMD_PRECHARGE :
-	muxed_write                                   ? CMD_WRITE     : CMD_READ;
+	!bank_active[current_req_banksel]                         ? CMD_ACTIVATE  :
+	bank_active_row[current_req_banksel] != current_req_raddr ? CMD_PRECHARGE :
+	current_req_write                                         ? CMD_WRITE     : CMD_READ;
 
-assign cmd_addr = bank_active[muxed_banksel] ? muxed_caddr : muxed_raddr;
-assign cmd_banksel = muxed_banksel;
+assign cmd_addr = bank_active[current_req_banksel] ? current_req_caddr : current_req_raddr;
+assign cmd_banksel = current_req_banksel;
 
-assign req_rdy = highest_master_with_highest_op & {N_REQ{cmd == CMD_WRITE || cmd == CMD_READ}};
+wire page_miss = cmd == CMD_PRECHARGE;
+wire page_empty = cmd == CMD_ACTIVATE;
+wire page_hit = cmd == CMD_WRITE || cmd == CMD_READ;
+
+// Precharge must respect tRAS, tWR.
+wire precharge_is_possible = ~|{
+	ctr_ras_to_pre[current_req_banksel],
+	ctr_cas_to_pre[current_req_banksel]
+};
+
+// Activate must respect tRC, tRP, tRRD
+wire activate_is_possible = ~|{
+	ctr_ras_to_ras_any,
+	ctr_ras_to_ras_same[current_req_banksel],
+	ctr_pre_to_ras[current_req_banksel]
+};
+
+// Bursts must respect tRCD, plus turnaround/contention rules.
+wire burst_is_possible = ~|ctr_ras_to_cas[current_req_banksel] &&
+	(current_req_write ? dq_write_contention_ok : dq_read_contention_ok);
+
+assign cmd_vld = |current_req && (
+	page_miss && precharge_is_possible ||
+	page_empty && activate_is_possible ||
+	page_hit && burst_is_possible
+);
+
+// ----------------------------------------------------------------------------
+// Handshaking
+
+assign req_rdy = current_req & {N_REQ{page_hit && cmd_vld}};
 
 // Onehot0 read/write data strobes to control bus interface
 wire [N_REQ-1:0] dq_master_sel;
@@ -537,10 +380,9 @@ endgenerate
 
 wire [1:0] scheduled_dq_op = dq_schedule[1][W_DQ_RECORD-1:W_DQ_RECORD-2];
 
-assign dq_write = cmd_vld && cmd == CMD_WRITE ? highest_master_with_highest_op :
+assign dq_write = cmd_vld && cmd == CMD_WRITE ? current_req :
 	dq_master_sel & {N_REQ{scheduled_dq_op == 2'b10}};
 
 assign dq_read = dq_master_sel & {N_REQ{scheduled_dq_op == 2'b11}};
-
 
 endmodule
