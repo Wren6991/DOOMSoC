@@ -52,7 +52,7 @@ wire pll_sys_locked;
 wire pll_bit_locked;
 wire rst_n_por;
 
-pll_25_50 pll_sys (
+pll_25_80 pll_sys (
 	.clkin   (clk_osc),
 	.clkout0 (clk_sys),
 	.locked  (pll_sys_locked)
