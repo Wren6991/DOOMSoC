@@ -8,6 +8,7 @@ list $HDL/sdram/ahbl_sdram.f
 file $LIBFPGA/common/reset_sync.v
 list $LIBFPGA/busfabric/busfabric.f
 list $LIBFPGA/mem/ahb_sync_sram.f
+list $LIBFPGA/mem/ahb_cache.f
 list $LIBFPGA/peris/uart/uart.f
 list $LIBFPGA/video/dvi_tx_parallel.f
 list $LIBFPGA/video/dvi_serialiser.f

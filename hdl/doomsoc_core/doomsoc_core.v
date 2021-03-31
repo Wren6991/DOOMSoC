@@ -60,6 +60,9 @@ localparam W_PADDR = 16;
 localparam SDRAM_BASE = 32'h2000_0000;
 localparam APB_BASE   = 32'h4000_0000;
 
+localparam ICACHE_SIZE_BYTES = 2 * 1024;
+localparam DCACHE_SIZE_BYTES = 2 * 1024;
+
 // ----------------------------------------------------------------------------
 // Resets
 
@@ -89,17 +92,54 @@ reset_sync reset_sync_pix (
 // ----------------------------------------------------------------------------
 // Instance wiring
 
-wire                proc_hready;
-wire                proc_hresp;
-wire [W_HADDR-1:0]  proc_haddr;
-wire                proc_hwrite;
-wire [1:0]          proc_htrans;
-wire [2:0]          proc_hsize;
-wire [2:0]          proc_hburst;
-wire [3:0]          proc_hprot;
-wire                proc_hmastlock;
-wire [W_HDATA-1:0]  proc_hwdata;
-wire [W_HDATA-1:0]  proc_hrdata;
+wire               icache_hready;
+wire               icache_hresp;
+wire [W_HADDR-1:0] icache_haddr;
+wire               icache_hwrite;
+wire [1:0]         icache_htrans;
+wire [2:0]         icache_hsize;
+wire [2:0]         icache_hburst;
+wire [3:0]         icache_hprot;
+wire               icache_hmastlock;
+wire [W_HDATA-1:0] icache_hwdata;
+wire [W_HDATA-1:0] icache_hrdata;
+
+wire               dcache_hready;
+wire               dcache_hresp;
+wire [W_HADDR-1:0] dcache_haddr;
+wire               dcache_hwrite;
+wire [1:0]         dcache_htrans;
+wire [2:0]         dcache_hsize;
+wire [2:0]         dcache_hburst;
+wire [3:0]         dcache_hprot;
+wire               dcache_hmastlock;
+wire [W_HDATA-1:0] dcache_hwdata;
+wire [W_HDATA-1:0] dcache_hrdata;
+
+wire               proc_i_hready;
+wire               proc_i_hresp;
+wire [W_HADDR-1:0] proc_i_haddr;
+wire               proc_i_hwrite;
+wire [1:0]         proc_i_htrans;
+wire [2:0]         proc_i_hsize;
+wire [2:0]         proc_i_hburst;
+wire [3:0]         proc_i_hprot;
+wire               proc_i_hmastlock;
+wire [W_HDATA-1:0] proc_i_hwdata;
+wire [W_HDATA-1:0] proc_i_hrdata;
+
+wire               proc_d_hready;
+wire               proc_d_hresp;
+wire [W_HADDR-1:0] proc_d_haddr;
+wire               proc_d_hwrite;
+wire [1:0]         proc_d_htrans;
+wire [2:0]         proc_d_hsize;
+wire [2:0]         proc_d_hburst;
+wire [3:0]         proc_d_hprot;
+wire [3:0]         proc_d_hprot_raw;
+wire               proc_d_hmastlock;
+wire [W_HDATA-1:0] proc_d_hwdata;
+wire [W_HDATA-1:0] proc_d_hrdata;
 
 // Temporary SRAM for running some test code
 wire                sram_hready;
@@ -257,38 +297,131 @@ wire [W_HDATA-1:0]  bgen3_hwdata;
 wire [W_HDATA-1:0]  bgen3_hrdata;
 
 // ----------------------------------------------------------------------------
-// Processor instantiation + integration
+// Processor and caches
 
-hazard5_cpu #(
+hazard5_cpu_2port #(
 	.RESET_VECTOR    (SDRAM_BASE + 32'hc0),
-	.EXTENSION_C     (1),
+	.MTVEC_INIT      (SDRAM_BASE),
+	.MTVEC_WMASK     (32'h0000_0000),      // Not modifiable
+
+	.EXTENSION_C     (0),
 	.EXTENSION_M     (1),
-	.MULDIV_UNROLL   (1),
-	.CSR_M_MANDATORY (1),
+	.CSR_M_MANDATORY (0),
 	.CSR_M_TRAP      (1),
 	.CSR_COUNTER     (0),
-	.MTVEC_INIT      (SDRAM_BASE)
-) inst_hazard5_cpu (
-	.clk             (clk_sys),
-	.rst_n           (rst_n_sys),
 
-	.ahblm_haddr     (proc_haddr),
-	.ahblm_hwrite    (proc_hwrite),
-	.ahblm_htrans    (proc_htrans),
-	.ahblm_hsize     (proc_hsize),
-	.ahblm_hburst    (proc_hburst),
-	.ahblm_hprot     (proc_hprot),
-	.ahblm_hmastlock (proc_hmastlock),
-	.ahblm_hready    (proc_hready),
-	.ahblm_hresp     (proc_hresp),
-	.ahblm_hwdata    (proc_hwdata),
-	.ahblm_hrdata    (proc_hrdata),
+	.MULDIV_UNROLL   (1),
+	.MUL_FAST        (0),
+	.REDUCED_BYPASS  (0)
+) cpu (
+	.clk         (clk_sys),
+	.rst_n       (rst_n_sys),
+
+	.i_haddr     (proc_i_haddr),
+	.i_hwrite    (proc_i_hwrite),
+	.i_htrans    (proc_i_htrans),
+	.i_hsize     (proc_i_hsize),
+	.i_hburst    (proc_i_hburst),
+	.i_hprot     (proc_i_hprot),
+	.i_hmastlock (proc_i_hmastlock),
+	.i_hready    (proc_i_hready),
+	.i_hresp     (proc_i_hresp),
+	.i_hwdata    (proc_i_hwdata),
+	.i_hrdata    (proc_i_hrdata),
+
+	.d_haddr     (proc_d_haddr),
+	.d_hwrite    (proc_d_hwrite),
+	.d_htrans    (proc_d_htrans),
+	.d_hsize     (proc_d_hsize),
+	.d_hburst    (proc_d_hburst),
+	.d_hprot     (proc_d_hprot_raw),
+	.d_hmastlock (proc_d_hmastlock),
+	.d_hready    (proc_d_hready),
+	.d_hresp     (proc_d_hresp),
+	.d_hwdata    (proc_d_hwdata),
+	.d_hrdata    (proc_d_hrdata),
 
 	.irq             ({
 		15'h0,
 		uart_irq
 	})
 );
+
+// Cacheable and bufferable iff below 0x4000_0000
+assign proc_d_hprot = {{2{proc_d_haddr[31:30] == 2'b00}}, proc_d_hprot_raw[1:0]};
+
+ahb_cache_writeback #(
+	.W_ADDR (W_HADDR),
+	.W_DATA (W_HDATA),
+	.DEPTH  (DCACHE_SIZE_BYTES / 4)
+) dcache (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.src_hready_resp (proc_d_hready),
+	.src_hready      (proc_d_hready),
+	.src_hresp       (proc_d_hresp),
+	.src_haddr       (proc_d_haddr),
+	.src_hwrite      (proc_d_hwrite),
+	.src_htrans      (proc_d_htrans),
+	.src_hsize       (proc_d_hsize),
+	.src_hburst      (proc_d_hburst),
+	.src_hprot       (proc_d_hprot),
+	.src_hmastlock   (proc_d_hmastlock),
+	.src_hwdata      (proc_d_hwdata),
+	.src_hrdata      (proc_d_hrdata),
+
+	.dst_hready_resp (dcache_hready),
+	.dst_hready      (/* unused */),
+	.dst_hresp       (dcache_hresp),
+	.dst_haddr       (dcache_haddr),
+	.dst_hwrite      (dcache_hwrite),
+	.dst_htrans      (dcache_htrans),
+	.dst_hsize       (dcache_hsize),
+	.dst_hburst      (dcache_hburst),
+	.dst_hprot       (dcache_hprot),
+	.dst_hmastlock   (dcache_hmastlock),
+	.dst_hwdata      (dcache_hwdata),
+	.dst_hrdata      (dcache_hrdata)
+);
+
+ahb_cache_readonly #(
+	.W_ADDR       (W_HADDR),
+	.W_DATA       (W_HDATA),
+	// .TMEM_PRELOAD ("icache_tag_preload.hex"),
+	// .DMEM_PRELOAD ("icache_preload.hex"),
+	.DEPTH        (ICACHE_SIZE_BYTES / 4)
+) icache (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.src_hready_resp (proc_i_hready),
+	.src_hready      (proc_i_hready),
+	.src_hresp       (proc_i_hresp),
+	.src_haddr       (proc_i_haddr),
+	.src_hwrite      (proc_i_hwrite),
+	.src_htrans      (proc_i_htrans),
+	.src_hsize       (proc_i_hsize),
+	.src_hburst      (proc_i_hburst),
+	.src_hprot       (proc_i_hprot),
+	.src_hmastlock   (proc_i_hmastlock),
+	.src_hwdata      (proc_i_hwdata),
+	.src_hrdata      (proc_i_hrdata),
+
+	.dst_hready_resp (icache_hready),
+	.dst_hready      (/* unused */),
+	.dst_hresp       (icache_hresp),
+	.dst_haddr       (icache_haddr),
+	.dst_hwrite      (icache_hwrite),
+	.dst_htrans      (icache_htrans),
+	.dst_hsize       (icache_hsize),
+	.dst_hburst      (icache_hburst),
+	.dst_hprot       (icache_hprot),
+	.dst_hmastlock   (icache_hmastlock),
+	.dst_hwdata      (icache_hwdata),
+	.dst_hrdata      (icache_hrdata)
+);
+
 
 // ----------------------------------------------------------------------------
 // DVI Out
@@ -402,8 +535,9 @@ dvi_serialiser serclk (
 // ----------------------------------------------------------------------------
 // Busfabric
 
-ahbl_splitter #(
-	.N_PORTS   (2),
+ahbl_crossbar #(
+	.N_MASTERS (2),
+	.N_SLAVES  (2),
 	.W_ADDR    (W_HADDR),
 	.W_DATA    (W_HDATA),
 	.ADDR_MAP  ({     APB_BASE,    SDRAM_BASE}),
@@ -412,18 +546,17 @@ ahbl_splitter #(
 	.clk             (clk_sys),
 	.rst_n           (rst_n_sys),
 
-	.src_hready      (proc_hready),
-	.src_hready_resp (proc_hready), // Tie HREADYOUT -> HREADY as this is top of fabric
-	.src_hresp       (proc_hresp),
-	.src_haddr       (proc_haddr),
-	.src_hwrite      (proc_hwrite),
-	.src_htrans      (proc_htrans),
-	.src_hsize       (proc_hsize),
-	.src_hburst      (proc_hburst),
-	.src_hprot       (proc_hprot),
-	.src_hmastlock   (proc_hmastlock),
-	.src_hwdata      (proc_hwdata),
-	.src_hrdata      (proc_hrdata),
+	.src_hready_resp ({icache_hready    , dcache_hready    }), // Tie HREADYOUT -> HREADY as this is top of fabric
+	.src_hresp       ({icache_hresp     , dcache_hresp     }),
+	.src_haddr       ({icache_haddr     , dcache_haddr     }),
+	.src_hwrite      ({icache_hwrite    , dcache_hwrite    }),
+	.src_htrans      ({icache_htrans    , dcache_htrans    }),
+	.src_hsize       ({icache_hsize     , dcache_hsize     }),
+	.src_hburst      ({icache_hburst    , dcache_hburst    }),
+	.src_hprot       ({icache_hprot     , dcache_hprot     }),
+	.src_hmastlock   ({icache_hmastlock , dcache_hmastlock }),
+	.src_hwdata      ({icache_hwdata    , dcache_hwdata    }),
+	.src_hrdata      ({icache_hrdata    , dcache_hrdata    }),
 
 	.dst_hready      ({bridge_hready      , sram_hready     }),
 	.dst_hready_resp ({bridge_hready_resp , sram_hready_resp}),
@@ -529,7 +662,7 @@ ahbl_sdram #(
 	.W_SDRAM_BANKSEL (2),
 	.W_SDRAM_ADDR    (13),
 	.W_SDRAM_DATA    (16),
-	.N_MASTERS       (4),
+	.N_MASTERS       (1), // (4),
 	.LEN_AHBL_BURST  (4),
 	.FIXED_TIMINGS   (1),
 	// Following are for AS4C32M16SB-7 at (aspirational) 80 MHz
@@ -566,18 +699,18 @@ ahbl_sdram #(
 	.apbs_pready       (sdram_pready),
 	.apbs_pslverr      (sdram_pslverr),
 
-	.ahbls_hready      ({bgen3_hready    , bgen2_hready    , bgen1_hready    , bgen0_hready    }),
-	.ahbls_hready_resp ({bgen3_hready    , bgen2_hready    , bgen1_hready    , bgen0_hready    }),
-	.ahbls_hresp       ({bgen3_hresp     , bgen2_hresp     , bgen1_hresp     , bgen0_hresp     }),
-	.ahbls_haddr       ({bgen3_haddr     , bgen2_haddr     , bgen1_haddr     , bgen0_haddr     }),
-	.ahbls_hwrite      ({bgen3_hwrite    , bgen2_hwrite    , bgen1_hwrite    , bgen0_hwrite    }),
-	.ahbls_htrans      ({bgen3_htrans    , bgen2_htrans    , bgen1_htrans    , bgen0_htrans    }),
-	.ahbls_hsize       ({bgen3_hsize     , bgen2_hsize     , bgen1_hsize     , bgen0_hsize     }),
-	.ahbls_hburst      ({bgen3_hburst    , bgen2_hburst    , bgen1_hburst    , bgen0_hburst    }),
-	.ahbls_hprot       ({bgen3_hprot     , bgen2_hprot     , bgen1_hprot     , bgen0_hprot     }),
-	.ahbls_hmastlock   ({bgen3_hmastlock , bgen2_hmastlock , bgen1_hmastlock , bgen0_hmastlock }),
-	.ahbls_hwdata      ({bgen3_hwdata    , bgen2_hwdata    , bgen1_hwdata    , bgen0_hwdata    }),
-	.ahbls_hrdata      ({bgen3_hrdata    , bgen2_hrdata    , bgen1_hrdata    , bgen0_hrdata    })
+	.ahbls_hready      ({/*bgen3_hready    , bgen2_hready    , bgen1_hready    , */ bgen0_hready    }),
+	.ahbls_hready_resp ({/*bgen3_hready    , bgen2_hready    , bgen1_hready    , */ bgen0_hready    }),
+	.ahbls_hresp       ({/*bgen3_hresp     , bgen2_hresp     , bgen1_hresp     , */ bgen0_hresp     }),
+	.ahbls_haddr       ({/*bgen3_haddr     , bgen2_haddr     , bgen1_haddr     , */ bgen0_haddr     }),
+	.ahbls_hwrite      ({/*bgen3_hwrite    , bgen2_hwrite    , bgen1_hwrite    , */ bgen0_hwrite    }),
+	.ahbls_htrans      ({/*bgen3_htrans    , bgen2_htrans    , bgen1_htrans    , */ bgen0_htrans    }),
+	.ahbls_hsize       ({/*bgen3_hsize     , bgen2_hsize     , bgen1_hsize     , */ bgen0_hsize     }),
+	.ahbls_hburst      ({/*bgen3_hburst    , bgen2_hburst    , bgen1_hburst    , */ bgen0_hburst    }),
+	.ahbls_hprot       ({/*bgen3_hprot     , bgen2_hprot     , bgen1_hprot     , */ bgen0_hprot     }),
+	.ahbls_hmastlock   ({/*bgen3_hmastlock , bgen2_hmastlock , bgen1_hmastlock , */ bgen0_hmastlock }),
+	.ahbls_hwdata      ({/*bgen3_hwdata    , bgen2_hwdata    , bgen1_hwdata    , */ bgen0_hwdata    }),
+	.ahbls_hrdata      ({/*bgen3_hrdata    , bgen2_hrdata    , bgen1_hrdata    , */ bgen0_hrdata    })
 );
 
 
