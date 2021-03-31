@@ -48,16 +48,15 @@ module ahbl_sdram #(
 	parameter LEN_AHBL_BURST     = 4,
 
 	parameter FIXED_TIMINGS      = 0,
-	// Following are for AS4C32M16SB-7 at (aspirational) 80 MHz
+	// Following are for AS4C32M16SB-7 at 80 MHz
 	parameter FIXED_TIME_RC       = 3'd4, // 63 ns 5 clk
 	parameter FIXED_TIME_RCD      = 3'd1, // 21 ns 2 clk
 	parameter FIXED_TIME_RP       = 3'd1, // 21 ns 2 clk
 	parameter FIXED_TIME_RRD      = 3'd1, // 14 ns 2 clk
 	parameter FIXED_TIME_RAS      = 3'd3, // 42 ns 4 clk
 	parameter FIXED_TIME_WR       = 3'd1, // 14 ns 2 clk
-	parameter FIXED_TIME_CAS      = 3'd2, // Programmed, 3 clk
+	parameter FIXED_TIME_CAS      = 3'd1, // 2 clk
 	parameter FIXED_TIME_REFRESH  = 12'd623, // 7.8 us 624 clk
-	parameter FIXED_TIME_COOLDOWN = 8'd30, // Tweakable parameter
 
 	parameter W_HADDR            = 32,
 	parameter W_HDATA            = 32  // Do not modify
@@ -118,7 +117,6 @@ wire [2:0]  time_wr;
 wire [1:0]  time_cas;
 
 wire [11:0] cfg_refresh_interval;
-wire [7:0]  cfg_row_cooldown;
 
 wire        cmd_direct_we_n_next;
 wire        cmd_direct_cas_n_next;
@@ -157,7 +155,6 @@ sdram_regs regblock (
 	.time_cas_o           (time_cas),
 
 	.refresh_o            (cfg_refresh_interval),
-	.row_cooldown_o       (cfg_row_cooldown),
 
 	.cmd_direct_we_n_o    (cmd_direct_we_n_next),
 	.cmd_direct_we_n_wen  (cmd_direct_we_n_push),
@@ -244,7 +241,6 @@ wire [N_MASTERS-1:0]       scheduler_dq_read_vld_next;
 sdram_scheduler #(
 	.N_REQ          (N_MASTERS),
 	.W_REFRESH_CTR  (12),
-	.W_COOLDOWN_CTR (8),
 	.W_TIME_CTR     (3),
 	.W_RADDR        (ROW_BITS),
 	.W_BANKSEL      (W_SDRAM_BANKSEL),
@@ -254,8 +250,8 @@ sdram_scheduler #(
 	.clk                  (clk),
 	.rst_n                (rst_n),
 
+	.cfg_refresh_en       (csr_en),
 	.cfg_refresh_interval (FIXED_TIMINGS ? FIXED_TIME_REFRESH : cfg_refresh_interval),
-	.cfg_row_cooldown     (FIXED_TIMINGS ? FIXED_TIME_COOLDOWN : cfg_row_cooldown),
 
 	.time_rc              (FIXED_TIMINGS ? FIXED_TIME_RC  : time_rc),
 	.time_rcd             (FIXED_TIMINGS ? FIXED_TIME_RCD : time_rcd),

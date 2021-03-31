@@ -15,8 +15,7 @@
 #define SDRAM_CSR_OFFS 0
 #define SDRAM_TIME_OFFS 4
 #define SDRAM_REFRESH_OFFS 8
-#define SDRAM_ROW_COOLDOWN_OFFS 12
-#define SDRAM_CMD_DIRECT_OFFS 16
+#define SDRAM_CMD_DIRECT_OFFS 12
 
 /*******************************************************************************
 *                                     CSR                                      *
@@ -95,18 +94,6 @@
 #define SDRAM_REFRESH_LSB  0
 #define SDRAM_REFRESH_BITS 12
 #define SDRAM_REFRESH_MASK 0xfff
-
-/*******************************************************************************
-*                                 ROW_COOLDOWN                                 *
-*******************************************************************************/
-
-// How many cycles to leave an unaccessed row open before closing. May only be
-// changed when CSR_EN is low.
-
-// Field: ROW_COOLDOWN  Access: RW
-#define SDRAM_ROW_COOLDOWN_LSB  0
-#define SDRAM_ROW_COOLDOWN_BITS 8
-#define SDRAM_ROW_COOLDOWN_MASK 0xff
 
 /*******************************************************************************
 *                                  CMD_DIRECT                                  *

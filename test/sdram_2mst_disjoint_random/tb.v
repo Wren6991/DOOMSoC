@@ -27,7 +27,7 @@ always #(0.5 * CLK_PERIOD) clk = !clk;
 
 localparam W_ADDR_RANGE = 2 + 2 + COLUMN_BITS + 1;
 localparam N_DATA_LINES = 1 << (W_ADDR_RANGE - 4); // size of tested memory range, measured in bursts
-localparam TEST_LEN = N_DATA_LINES * 10;
+localparam TEST_LEN = N_DATA_LINES * 20;
 
 integer i;
 

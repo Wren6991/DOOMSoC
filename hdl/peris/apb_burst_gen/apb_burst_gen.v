@@ -176,4 +176,11 @@ end
 
 assign csr_ready = !(in_dphase || in_aphase);
 
+
+// Tie off unused transfer attributes
+
+assign ahblm_hsize = 3'b010;
+assign ahblm_hmastlock = 1'b0;
+assign ahblm_hprot = 4'b0011;
+
 endmodule

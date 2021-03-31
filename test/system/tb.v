@@ -4,9 +4,9 @@ localparam W_SDRAM_BANKSEL = 2;
 localparam W_SDRAM_ADDR = 13;
 localparam W_SDRAM_DATA = 16;
 
-localparam CLK_SYS_PERIOD = 20;
-localparam CLK_DVI_PIX_PERIOD = 40;
-localparam CLK_DVI_BIT_PERIOD = 8;
+localparam CLK_SYS_PERIOD = 12.5;   // 80 MHz
+localparam CLK_DVI_PIX_PERIOD = 40; // 25 MHz
+localparam CLK_DVI_BIT_PERIOD = 8;  // 125 MHz
 
 reg                        clk_sys;
 reg                        clk_dvi_pix;

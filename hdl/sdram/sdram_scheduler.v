@@ -26,7 +26,6 @@
 module sdram_scheduler #(
 	parameter N_REQ          = 4,
 	parameter W_REFRESH_CTR  = 12,
-	parameter W_COOLDOWN_CTR = 8,
 	parameter W_RADDR        = 13,
 	parameter W_BANKSEL      = 2,
 	parameter W_CADDR        = 10,
@@ -37,17 +36,16 @@ module sdram_scheduler #(
 	input  wire                       clk,
 	input  wire                       rst_n,
 
+	input  wire                       cfg_refresh_en,
 	input  wire [W_REFRESH_CTR-1:0]   cfg_refresh_interval,
-	input  wire [W_COOLDOWN_CTR-1:0]  cfg_row_cooldown,
 
-	//
-	input wire [W_TIME_CTR-1:0]       time_rc,  // tRC: Row cycle time, RowActivate to RowActivate, same bank.
-	input wire [W_TIME_CTR-1:0]       time_rcd, // tRCD: RAS to CAS delay.
-	input wire [W_TIME_CTR-1:0]       time_rp,  // tRP: Precharge to RowActivate delay (same bank)
-	input wire [W_TIME_CTR-1:0]       time_rrd, // tRRD: RowActivate to RowActivate, different banks
-	input wire [W_TIME_CTR-1:0]       time_ras, // tRAS: RowActivate to Precharge, same bank
-	input wire [W_TIME_CTR-1:0]       time_wr,  // tWR: Write to Precharge, same bank
-	input wire [1:0]                  time_cas, // tCAS: CAS-to-data latency
+	input  wire [W_TIME_CTR-1:0]      time_rc,  // tRC: Row cycle time, RowActivate to RowActivate, same bank.
+	input  wire [W_TIME_CTR-1:0]      time_rcd, // tRCD: RAS to CAS delay.
+	input  wire [W_TIME_CTR-1:0]      time_rp,  // tRP: Precharge to RowActivate delay (same bank)
+	input  wire [W_TIME_CTR-1:0]      time_rrd, // tRRD: RowActivate to RowActivate, different banks
+	input  wire [W_TIME_CTR-1:0]      time_ras, // tRAS: RowActivate to Precharge, same bank
+	input  wire [W_TIME_CTR-1:0]      time_wr,  // tWR: Write to Precharge, same bank
+	input  wire [1:0]                 time_cas, // tCAS: CAS-to-data latency
 
 	input  wire [N_REQ-1:0]           req_vld,
 	output wire [N_REQ-1:0]           req_rdy,
@@ -86,7 +84,8 @@ reg [W_TIME_CTR-1:0] ctr_ras_to_ras_any;                // tRRD, global across a
 reg [W_TIME_CTR-1:0] ctr_ras_to_pre      [0:N_BANKS-1]; // tRAS
 reg [3:0]            ctr_cas_to_pre      [0:N_BANKS-1]; // tWR, and blocking precharge during read bursts
 
-wire precharge_is_all = cmd_addr[10];
+localparam PRECHARGE_ALL_ADDR_BIT = 10;
+wire precharge_is_all = cmd_addr[PRECHARGE_ALL_ADDR_BIT];
 
 wire [2:0] cmd = {cmd_ras_n, cmd_cas_n, cmd_we_n};
 
@@ -125,15 +124,41 @@ always @ (posedge clk or negedge rst_n) begin: timing_scoreboard_update
 					ctr_pre_to_ras[i] <= time_rp;
 				end
 				if (cmd == CMD_WRITE && cmd_banksel == i) begin
-					ctr_cas_to_pre[i] <= BURST_LEN - 1 + time_wr;
+					ctr_cas_to_pre[i] <= BURST_LEN - 1 + (time_wr + 1);
 				end else if (cmd == CMD_READ && cmd_banksel == i) begin
-					ctr_cas_to_pre[i] <= BURST_LEN - 1;
+					ctr_cas_to_pre[i] <= BURST_LEN - 1 + (time_cas + 1);
 				end
 			end
 			if (cmd == CMD_ACTIVATE) begin
 				ctr_ras_to_ras_any <= time_rrd;
 			end
 		end
+	end
+end
+
+// Refresh request at regular intervals. There can be some delay in the
+// refresh being issued (e.g. if there is an ongoing data burst at the point
+// where the refresh is requested, or if a recent ACT stops us from PREing a
+// bank) so we continue counting whilst the request is outstanding, to make
+// sure we get a consistent steady-state refresh rate.
+
+reg [W_REFRESH_CTR-1:0] refresh_ctr;
+reg                     refresh_req;
+
+wire refresh_issued = cmd_vld && cmd == CMD_REFRESH;
+
+always @ (posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		refresh_ctr <= {W_REFRESH_CTR{1'b0}};
+		refresh_req <= 1'b0;
+	end else if (!cfg_refresh_en) begin
+		// Refresh is disabled at startup, enabled once software has done mode
+		// register programming etc.
+		refresh_ctr <= {W_REFRESH_CTR{1'b0}};
+		refresh_req <= 1'b0;
+	end else begin
+		refresh_ctr <= refresh_ctr + 1'b1 - (refresh_issued ? cfg_refresh_interval : {W_REFRESH_CTR{1'b0}});
+		refresh_req <= (refresh_req && !refresh_issued) || refresh_ctr == cfg_refresh_interval;
 	end
 end
 
@@ -241,7 +266,7 @@ end
 // Can issue read if DQs are free from tCAS to tCAS + BURST_LEN - 1, and there
 // was no write on tCAS - 1. (turnaround/contention)
 //
-// Additionally make sure that there is no *write* cycle specifcally on the
+// Additionally make sure that there is no *write* cycle specifically on the
 // current cycle, as issuing a Read at any point during a Write burst seems to
 // terminate the Write (not clear from documentation but this is how the
 // MT48LC32M16 vendor model behaves)
@@ -251,7 +276,7 @@ always @ (*) begin: check_dq_read_contention_ok
 	dq_read_contention_ok = 1'b1;
 	for (i = 0; i < DQ_SCHEDULE_LEN; i = i + 1) begin
 		dq_read_contention_ok = dq_read_contention_ok && !(read_cycle_mask[i] && dq_schedule[i][W_DQ_RECORD-1]);
-	end	
+	end
 	dq_read_contention_ok = dq_read_contention_ok && dq_schedule[time_cas][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
 	dq_read_contention_ok = dq_read_contention_ok && dq_schedule[1][W_DQ_RECORD-1:W_DQ_RECORD-2] != 2'b10;
 end
@@ -259,9 +284,10 @@ end
 // ----------------------------------------------------------------------------
 // Arbitration/queueing
 
-// We process one request at a time, with simple priority selection. Down the
-// line it might be profitable to look one transfer ahead, for better bank
-// concurrency, but let's keep it simple for now.
+// We process one request at a time, with simple priority selection. This gets
+// reasonable bank concurrency when there is no bank thrashing, because we can
+// start preparing the bank for the next request whilst the previous request's
+// data burst is ongoing.
 
 wire [N_REQ-1:0] current_req_comb;
 reg  [N_REQ-1:0] current_req_hold;
@@ -328,22 +354,44 @@ onehot_mux #(
 // Command generation
 
 assign {cmd_ras_n, cmd_cas_n, cmd_we_n} =
+	refresh_req && |bank_active                               ? CMD_PRECHARGE :
+	refresh_req && ~|bank_active                              ? CMD_REFRESH   :
 	!bank_active[current_req_banksel]                         ? CMD_ACTIVATE  :
 	bank_active_row[current_req_banksel] != current_req_raddr ? CMD_PRECHARGE :
 	current_req_write                                         ? CMD_WRITE     : CMD_READ;
 
-assign cmd_addr = bank_active[current_req_banksel] ? current_req_caddr : current_req_raddr;
+wire refresh_miss = cmd == CMD_PRECHARGE && refresh_req;
+wire refresh_hit  = cmd == CMD_REFRESH;
+wire page_miss    = cmd == CMD_PRECHARGE && !refresh_req;
+wire page_empty   = cmd == CMD_ACTIVATE;
+wire page_hit     = cmd == CMD_WRITE || cmd == CMD_READ;
+
+assign cmd_addr =
+	refresh_miss ? {{W_RADDR-1{1'b0}}, 1'b1} << PRECHARGE_ALL_ADDR_BIT :
+	page_hit     ? {{W_RADDR-W_CADDR{1'b0}}, current_req_caddr}        :
+	page_empty   ? current_req_raddr                                   : {W_RADDR{1'b0}};
+
 assign cmd_banksel = current_req_banksel;
 
-wire page_miss = cmd == CMD_PRECHARGE;
-wire page_empty = cmd == CMD_ACTIVATE;
-wire page_hit = cmd == CMD_WRITE || cmd == CMD_READ;
-
-// Precharge must respect tRAS, tWR.
+// Precharge must respect tRAS, tWR, and must not precharge during a read
+// burst on same bank (uses same counter as tWR)
 wire precharge_is_possible = ~|{
 	ctr_ras_to_pre[current_req_banksel],
 	ctr_cas_to_pre[current_req_banksel]
 };
+
+// PrechargeAll is the same, but for all banks.
+reg precharge_all_is_possible;
+always @ (*) begin: check_precharge_all_is_possible
+	integer b;
+	precharge_all_is_possible = 1'b1;
+	for (b = 0; b < N_BANKS; b = b + 1) begin
+		precharge_all_is_possible = precharge_all_is_possible && ~|{
+			ctr_ras_to_pre[b],
+			ctr_cas_to_pre[b]
+		};
+	end
+end
 
 // Activate must respect tRC, tRP, tRRD
 wire activate_is_possible = ~|{
@@ -352,15 +400,32 @@ wire activate_is_possible = ~|{
 	ctr_pre_to_ras[current_req_banksel]
 };
 
+// Refresh is the same, but for all banks.
+reg refresh_is_possible;
+always @ (*) begin: check_refresh_is_possible
+	integer b;
+	refresh_is_possible = ~|ctr_ras_to_ras_any;
+	for (b = 0; b < N_BANKS; b = b + 1) begin
+		refresh_is_possible = refresh_is_possible && ~|{
+			ctr_ras_to_ras_same[b],
+			ctr_pre_to_ras[b]
+		};
+	end
+end
+
 // Bursts must respect tRCD, plus turnaround/contention rules.
 wire burst_is_possible = ~|ctr_ras_to_cas[current_req_banksel] &&
 	(current_req_write ? dq_write_contention_ok : dq_read_contention_ok);
 
-assign cmd_vld = |current_req && (
-	page_miss && precharge_is_possible ||
-	page_empty && activate_is_possible ||
-	page_hit && burst_is_possible
-);
+assign cmd_vld =
+	refresh_req && (
+		refresh_miss && precharge_all_is_possible ||
+		refresh_hit  && refresh_is_possible
+	) || |current_req && (
+		page_miss    && precharge_is_possible     ||
+		page_empty   && activate_is_possible      ||
+		page_hit     && burst_is_possible
+	);
 
 // ----------------------------------------------------------------------------
 // Handshaking

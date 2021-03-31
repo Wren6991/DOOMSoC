@@ -33,10 +33,6 @@ regs:
     info: "tREFI: Average refresh interval, in SDRAM clock cycles."
     bits:
       - {b: [11, 0], access: rw}
-  - name: row_cooldown
-    info: "How many cycles to leave an unaccessed row open before closing. May only be changed when CSR_EN is low."
-    bits:
-      - {b: [7, 0], access: rw}
   - name: cmd_direct
     info: |
       Write to assert a command directly onto SDRAM e.g. Load Mode Register.

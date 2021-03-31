@@ -9,7 +9,7 @@
          </top_modules>
       </db_ref>
    </db_ref_list>
-   <WVObjectSize size="11" />
+   <WVObjectSize size="10" />
    <wvobject fp_name="/tb/clk" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">clk</obj_property>
       <obj_property name="ObjectShortName">clk</obj_property>
@@ -212,42 +212,43 @@
          <obj_property name="ElementShortName">ctr_ras_to_pre[0:3,2:0]</obj_property>
          <obj_property name="ObjectShortName">ctr_ras_to_pre[0:3,2:0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/desired" type="array" db_ref_id="1">
-         <obj_property name="ElementShortName">desired[0:3,0:1,2:0]</obj_property>
-         <obj_property name="ObjectShortName">desired[0:3,0:1,2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/bank_possible" type="array" db_ref_id="1">
-         <obj_property name="ElementShortName">bank_possible[0:3,2:0]</obj_property>
-         <obj_property name="ObjectShortName">bank_possible[0:3,2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/desired_and_possible" type="array" db_ref_id="1">
-         <obj_property name="ElementShortName">desired_and_possible[0:1,2:0]</obj_property>
-         <obj_property name="ObjectShortName">desired_and_possible[0:1,2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/op_has_active_master" type="array" db_ref_id="1">
-         <obj_property name="ElementShortName">op_has_active_master[2:0]</obj_property>
-         <obj_property name="ObjectShortName">op_has_active_master[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/masters_with_highest_op" type="array" db_ref_id="1">
-         <obj_property name="ElementShortName">masters_with_highest_op[1:0]</obj_property>
-         <obj_property name="ObjectShortName">masters_with_highest_op[1:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/highest_master_with_highest_op" type="array" db_ref_id="1">
-         <obj_property name="ElementShortName">highest_master_with_highest_op[1:0]</obj_property>
-         <obj_property name="ObjectShortName">highest_master_with_highest_op[1:0]</obj_property>
-      </wvobject>
       <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/dq_schedule" type="array" db_ref_id="1">
          <obj_property name="ElementShortName">dq_schedule[0:12,2:0]</obj_property>
          <obj_property name="ObjectShortName">dq_schedule[0:12,2:0]</obj_property>
       </wvobject>
+      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/refresh_ctr" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">refresh_ctr[11:0]</obj_property>
+         <obj_property name="ObjectShortName">refresh_ctr[11:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/refresh_req" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">refresh_req</obj_property>
+         <obj_property name="ObjectShortName">refresh_req</obj_property>
+      </wvobject>
    </wvobject>
-   <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/can_issue_write" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">can_issue_write</obj_property>
-      <obj_property name="ObjectShortName">can_issue_write</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/can_issue_read" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">can_issue_read</obj_property>
-      <obj_property name="ObjectShortName">can_issue_read</obj_property>
+   <wvobject fp_name="group81" type="group">
+      <obj_property name="label">Rules</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/precharge_all_is_possible" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">precharge_all_is_possible</obj_property>
+         <obj_property name="ObjectShortName">precharge_all_is_possible</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/refresh_is_possible" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">refresh_is_possible</obj_property>
+         <obj_property name="ObjectShortName">refresh_is_possible</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/precharge_is_possible" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">precharge_is_possible</obj_property>
+         <obj_property name="ObjectShortName">precharge_is_possible</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/activate_is_possible" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">activate_is_possible</obj_property>
+         <obj_property name="ObjectShortName">activate_is_possible</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb/inst_ahbl_sdram/inst_sdram_scheduler/burst_is_possible" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">burst_is_possible</obj_property>
+         <obj_property name="ObjectShortName">burst_is_possible</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="group263" type="group">
       <obj_property name="label">Scheduled Command</obj_property>

@@ -6,7 +6,6 @@ struct sdram_ctrl_hw {
 	io_rw_32 csr;
 	io_rw_32 time;
 	io_rw_32 refresh;
-	io_rw_32 row_cooldown;
 	io_rw_32 cmd_direct;
 };
 

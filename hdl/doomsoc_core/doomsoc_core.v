@@ -311,7 +311,7 @@ hazard5_cpu_2port #(
 	.CSR_COUNTER     (0),
 
 	.MULDIV_UNROLL   (1),
-	.MUL_FAST        (0),
+	.MUL_FAST        (1),
 	.REDUCED_BYPASS  (0)
 ) cpu (
 	.clk         (clk_sys),
@@ -657,24 +657,24 @@ ahb_sync_sram #(
 );
 
 ahbl_sdram #(
-	.COLUMN_BITS     (10),
-	.ROW_BITS        (13),
-	.W_SDRAM_BANKSEL (2),
-	.W_SDRAM_ADDR    (13),
-	.W_SDRAM_DATA    (16),
-	.N_MASTERS       (1), // (4),
-	.LEN_AHBL_BURST  (4),
-	.FIXED_TIMINGS   (1),
+	.COLUMN_BITS        (10),
+	.ROW_BITS           (13),
+	.W_SDRAM_BANKSEL    (2),
+	.W_SDRAM_ADDR       (13),
+	.W_SDRAM_DATA       (16),
+	.N_MASTERS          (1), // (4),
+	.LEN_AHBL_BURST     (4),
+
+	.FIXED_TIMINGS      (1), // 1: use fixed values, 0: allow programming via APB.
 	// Following are for AS4C32M16SB-7 at (aspirational) 80 MHz
-	.FIXED_TIME_RC         (3'd4   ), // 63 ns 5 clk
-	.FIXED_TIME_RCD        (3'd1   ), // 21 ns 2 clk
-	.FIXED_TIME_RP         (3'd1   ), // 21 ns 2 clk
-	.FIXED_TIME_RRD        (3'd1   ), // 14 ns 2 clk
-	.FIXED_TIME_RAS        (3'd3   ), // 42 ns 4 clk
-	.FIXED_TIME_WR         (3'd1   ), // 14 ns 2 clk
-	.FIXED_TIME_CAS        (3'd2   ), // Programmed, 3 clk
-	.FIXED_TIME_REFRESH    (12'd623), // 7.8 us 624 clk
-	.FIXED_TIME_COOLDOWN   (8'd30  )  // Tweakable parameter
+	.FIXED_TIME_RC      (3'd4   ), // 63 ns 5 clk
+	.FIXED_TIME_RCD     (3'd1   ), // 21 ns 2 clk
+	.FIXED_TIME_RP      (3'd1   ), // 21 ns 2 clk
+	.FIXED_TIME_RRD     (3'd1   ), // 14 ns 2 clk
+	.FIXED_TIME_RAS     (3'd3   ), // 42 ns 4 clk
+	.FIXED_TIME_WR      (3'd1   ), // 14 ns 2 clk
+	.FIXED_TIME_CAS     (3'd1   ), // 2 clk up to 100 MHz, 3 clk above. Must match modereg.
+	.FIXED_TIME_REFRESH (12'd623)  // 7.8 us 624 clk
 ) inst_ahbl_sdram (
 	.clk               (clk_sys),
 	.rst_n             (rst_n_sys),

@@ -18,7 +18,7 @@ wire oe_pad;
 wire i_pad;
 
 // The syn_useioff attribute tells nextpnr to pack these flops into the IO
-// cell (or die trying). The IO cell must be the flop's only sink.
+// cell (or die trying). The IO cell must be the flop's only load.
 // Flops driven with identical signals (e.g. the direction of a
 // parallel data bus) may be merged during synthesis, which breaks the
 // single-load requirement for IO packing.

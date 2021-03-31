@@ -34,7 +34,6 @@ module sdram_regs (
 	output reg [2:0] time_wr_o,
 	output reg [1:0] time_cas_o,
 	output reg [11:0] refresh_o,
-	output reg [7:0] row_cooldown_o,
 	output reg  cmd_direct_we_n_o,
 	output reg cmd_direct_we_n_wen,
 	output reg  cmd_direct_cas_n_o,
@@ -52,7 +51,7 @@ wire [31:0] wdata = apbs_pwdata;
 reg [31:0] rdata;
 wire wen = apbs_psel && apbs_penable && apbs_pwrite;
 wire ren = apbs_psel && apbs_penable && !apbs_pwrite;
-wire [15:0] addr = apbs_paddr & 16'h1c;
+wire [15:0] addr = apbs_paddr & 16'hc;
 assign apbs_prdata = rdata;
 assign apbs_pready = 1'b1;
 assign apbs_pslverr = 1'b0;
@@ -60,8 +59,7 @@ assign apbs_pslverr = 1'b0;
 localparam ADDR_CSR = 0;
 localparam ADDR_TIME = 4;
 localparam ADDR_REFRESH = 8;
-localparam ADDR_ROW_COOLDOWN = 12;
-localparam ADDR_CMD_DIRECT = 16;
+localparam ADDR_CMD_DIRECT = 12;
 
 wire __csr_wen = wen && addr == ADDR_CSR;
 wire __csr_ren = ren && addr == ADDR_CSR;
@@ -69,8 +67,6 @@ wire __time_wen = wen && addr == ADDR_TIME;
 wire __time_ren = ren && addr == ADDR_TIME;
 wire __refresh_wen = wen && addr == ADDR_REFRESH;
 wire __refresh_ren = ren && addr == ADDR_REFRESH;
-wire __row_cooldown_wen = wen && addr == ADDR_ROW_COOLDOWN;
-wire __row_cooldown_ren = ren && addr == ADDR_ROW_COOLDOWN;
 wire __cmd_direct_wen = wen && addr == ADDR_CMD_DIRECT;
 wire __cmd_direct_ren = ren && addr == ADDR_CMD_DIRECT;
 
@@ -110,11 +106,6 @@ wire [11:0] refresh_rdata;
 wire [31:0] __refresh_rdata = {20'h0, refresh_rdata};
 assign refresh_rdata = refresh_o;
 
-wire [7:0] row_cooldown_wdata = wdata[7:0];
-wire [7:0] row_cooldown_rdata;
-wire [31:0] __row_cooldown_rdata = {24'h0, row_cooldown_rdata};
-assign row_cooldown_rdata = row_cooldown_o;
-
 wire  cmd_direct_we_n_wdata = wdata[0];
 wire  cmd_direct_we_n_rdata;
 wire  cmd_direct_cas_n_wdata = wdata[1];
@@ -137,7 +128,6 @@ always @ (*) begin
 		ADDR_CSR: rdata = __csr_rdata;
 		ADDR_TIME: rdata = __time_rdata;
 		ADDR_REFRESH: rdata = __refresh_rdata;
-		ADDR_ROW_COOLDOWN: rdata = __row_cooldown_rdata;
 		ADDR_CMD_DIRECT: rdata = __cmd_direct_rdata;
 		default: rdata = 32'h0;
 	endcase
@@ -165,7 +155,6 @@ always @ (posedge clk or negedge rst_n) begin
 		time_wr_o <= 3'h0;
 		time_cas_o <= 2'h0;
 		refresh_o <= 12'h0;
-		row_cooldown_o <= 8'h0;
 	end else begin
 		if (__csr_wen)
 			csr_en_o <= csr_en_wdata;
@@ -187,8 +176,6 @@ always @ (posedge clk or negedge rst_n) begin
 			time_cas_o <= time_cas_wdata;
 		if (__refresh_wen)
 			refresh_o <= refresh_wdata;
-		if (__row_cooldown_wen)
-			row_cooldown_o <= row_cooldown_wdata;
 	end
 end
 
