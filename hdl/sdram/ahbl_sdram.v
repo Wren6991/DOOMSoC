@@ -376,7 +376,7 @@ always @ (posedge clk or negedge rst_n) begin: io_delay_match
 	end else begin
 		dq_read_delay[0] <= scheduler_dq_read_vld;
 		for (i = 1; i < IO_ROUNDTRIP; i = i + 1)
-			dq_read_delay[i] = dq_read_delay[i - 1];
+			dq_read_delay[i] <= dq_read_delay[i - 1];
 	end
 end
 
