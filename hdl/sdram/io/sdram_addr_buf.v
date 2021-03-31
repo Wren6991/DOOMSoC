@@ -5,17 +5,35 @@ module sdram_addr_buf (
 	output wire q
 );
 
-// FIXME this is a workaround for apparent lack of SDR output buffers in
-// Trellis at the moment
+`ifdef FPGA_ECP5
 
-ddr_out ckbuf (
-	.clk (clk),
-	.rst_n (rst_n),
-
-	.d_rise (d),
-	.d_fall (d),
-	.e      (1'b1),
-	.q      (q)
+(*syn_useioff*) (*keep*) TRELLIS_FF #(
+	.GSR("DISABLED"),
+	.CEMUX("1"),
+	.CLKMUX("CLK"),
+	.LSRMUX("LSR"),
+	.REGSET("RESET")
+) o_reg (
+	.CLK (clk),
+	.LSR (1'b0),
+	.DI  (d),
+	.Q   (q)
 );
+
+`else
+
+reg q_r;
+
+always @ (posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		q_r <= 1'b0;
+	end else begin
+		q_r <= d;
+	end
+end
+
+assign q = q_r;
+
+`endif
 
 endmodule

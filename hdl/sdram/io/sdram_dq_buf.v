@@ -1,59 +1,74 @@
+// Fully-registered tristate IO, for driving DQs on SDR SDRAM. Uses internal
+// registers of IO cell, where applicable.
+
 module sdram_dq_buf (
 	input  wire clk,
 	input  wire rst_n,
 
 	input  wire o,  // output from core to pad
 	input  wire oe, // active-high output enable
-	output wire i,  // input from pad to core
+	output wire i,  // input to core from pad
 	inout  wire dq  // pad connection
 );
 
 `ifdef FPGA_ECP5
 
-// FIXME workaround for lack of OREG primitive in (if this even exists, I only
-// saw it in TN1265)
-
 wire o_pad;
-
-ODDRX1F oddr (
-	.D0   (o),
-	.D1   (o),
-	.SCLK (clk),
-	.RST  (1'b0),
-	.Q    (o_pad)
-);
-
-// Likewise we are doing something pretty messed up for the input register here
-
+wire oe_pad;
 wire i_pad;
 
+// The syn_useioff attribute tells nextpnr to pack these flops into the IO
+// cell (or die trying). The IO cell must be the flop's only sink.
+// Flops driven with identical signals (e.g. the direction of a
+// parallel data bus) may be merged during synthesis, which breaks the
+// single-load requirement for IO packing.
+//
+// Putting a keep attribute on a `reg` doesn't prevent flop merging. Yosys
+// does check for this attribute in opt_merge, but it sees its own $dff cell
+// created during proc, and the keep attribute doesn't seem to be propagated.
+// Dodgy workaround is to instantiate TRELLIS_FF directly.
+
+(*syn_useioff*) (*keep*) TRELLIS_FF #(
+	.GSR("DISABLED"),
+	.CEMUX("1"),
+	.CLKMUX("CLK"),
+	.LSRMUX("LSR"),
+	.REGSET("RESET")
+) o_reg (
+	.CLK (clk),
+	.LSR (1'b0),
+	.DI  (o),
+	.Q   (o_pad)
+);
+
+(*syn_useioff*) (*keep*) TRELLIS_FF #(
+	.GSR("DISABLED"),
+	.CEMUX("1"),
+	.CLKMUX("CLK"),
+	.LSRMUX("LSR"),
+	.REGSET("RESET")
+) oe_reg (
+	.CLK (clk),
+	.LSR (1'b0),
+	.DI  (!oe),  // pad signal is active-low
+	.Q   (oe_pad)
+);
+
+// Capture is aligned with outgoing SDCLK posedge (which is on clk negedge, so
+// that SDCLK is centre-aligned with our outputs)
 IDDRX1F iddr (
 	.D    (i_pad),
 	.SCLK (clk),
 	.RST  (1'b0),
 	.Q0   (/* unused */),
-	.Q1   (i)             // FIXME negedge capture for now until I look into timing and delay lines
+	.Q1   (i)
 );
-
-// ECP5 datasheet mentions a PIO primitive for synchronous tristating ("TSFF")
-// and refers you to TN1265. TN1265 does not mention this primitive. TSHX2
-// does exist but it has some clock and gearing stuff going on
-
-reg oe_pad;
-always @ (posedge clk or negedge rst_n)
-	if (!rst_n)
-		oe_pad <= 1'b1; // Active-low OE
-	else
-		oe_pad <= !oe;
-
-// Actual tristate buffer, IDDR and ODDR are folded into this as they're all
-// part of the PIO
 
 TRELLIS_IO #(
 	.DIR("BIDIR")
-) sdram_dq_buf_0 (
+) iobuf (
 	.B (dq),
-	.I (o_pad), // Yes I->o and O->i, Lattice use I for core->pad for some fuckawful reason
+	.I (o_pad), // Lattice use I for core->pad for some fuckawful reason
 	.O (i_pad),
 	.T (oe_pad)
 );
