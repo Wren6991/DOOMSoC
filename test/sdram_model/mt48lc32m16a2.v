@@ -70,6 +70,9 @@ module mt48lc32m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
    parameter mem_sizes =   1048576;
 `endif
    
+   // (luke) parameterise init hex file name
+   parameter PRELOAD_FILE = "";
+
    // Common to all parts
    parameter data_bits =      16;
 
@@ -88,7 +91,7 @@ module mt48lc32m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
    reg [data_bits - 1 : 0] 	 Bank1 [0 : mem_sizes];
    reg [data_bits - 1 : 0] 	 Bank2 [0 : mem_sizes];
    reg [data_bits - 1 : 0] 	 Bank3 [0 : mem_sizes];
-   reg [31 : 0] 		 Bank0_32bit [0 : (mem_sizes/2)]; // Temporary 32-bit wide array to hold readmemh()'d data before loading into 16-bit wide array
+   // reg [31 : 0] 		 Bank0_32bit [0 : (mem_sizes/2)]; // Temporary 32-bit wide array to hold readmemh()'d data before loading into 16-bit wide array
     reg                   [1 : 0] Bank_addr [0 : 3];                // Bank Address Pipeline
     reg        [col_bits - 1 : 0] Col_addr [0 : 3];                 // Column Address Pipeline
     reg                   [3 : 0] Command [0 : 3];                  // Command Operation Pipeline
@@ -213,18 +216,45 @@ module mt48lc32m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
 	 end
 `endif
 
-`ifdef PRELOAD_RAM // Added jb
-       $display("* Preloading SDRAM bank 0.\n");
-       // Uses the vmem file for the internal SRAM, so words are 32-bits wide
-       // and we need to copy them into the 16-bit wide array, which the simulator
-       // can't figure out how to do, so we'll do it manually here.
-       $readmemh("sram.vmem", Bank0_32bit);
-       for (mem_cnt=0;mem_cnt < (mem_sizes/2); mem_cnt = mem_cnt + 1)
-	 begin
-	    Bank0[(mem_cnt*2)+1] = Bank0_32bit[mem_cnt][15:0];
-	    Bank0[(mem_cnt*2)] = Bank0_32bit[mem_cnt][31:16];
-	 end
-`endif
+        // (luke) add updated routine using parameter instead of macro (for
+        // (multiple instances) and preloading in row:bank:column order
+        // (instead of row:column,bank0-only like the vendor code.
+
+// `ifdef PRELOAD_RAM // Added jb
+//        $display("* Preloading SDRAM bank 0.\n");
+//        // Uses the vmem file for the internal SRAM, so words are 32-bits wide
+//        // and we need to copy them into the 16-bit wide array, which the simulator
+//        // can't figure out how to do, so we'll do it manually here.
+//        $readmemh("sram.vmem", Bank0_32bit);
+//        for (mem_cnt=0;mem_cnt < (mem_sizes/2); mem_cnt = mem_cnt + 1)
+// 	 begin
+// 	    Bank0[(mem_cnt*2)+1] = Bank0_32bit[mem_cnt][15:0];
+// 	    Bank0[(mem_cnt*2)] = Bank0_32bit[mem_cnt][31:16];
+// 	 end
+// `endif
+
+	if (PRELOAD_FILE != "") begin: mem_preload
+		reg [31:0] readmem_buf [0:4*mem_sizes-1];
+		integer row, bank, col, full_addr;
+		reg [15:0] preload_tmp;
+		$display("Initialising %m from hex file %s in row:bank:column order\n", PRELOAD_FILE);
+		$readmemh(PRELOAD_FILE, readmem_buf);
+		for (full_addr = 0; full_addr < 1 << (addr_bits + col_bits + 2); full_addr = full_addr + 1) begin
+			col = full_addr[0 +: col_bits];
+			bank = full_addr[col_bits +: 2];
+			row = full_addr[col_bits + 2 +: addr_bits];
+			preload_tmp = readmem_buf[full_addr / 2] >> (full_addr & 1 ? 16 : 0);
+			if (bank == 0)
+				Bank0[{row, col}] = preload_tmp;
+			else if (bank == 1)
+				Bank1[{row, col}] = preload_tmp;
+			else if (bank == 2)
+				Bank2[{row, col}] = preload_tmp;
+			else if (bank == 3)
+				Bank3[{row, col}] = preload_tmp;
+		end
+	end
+
 end
 
     // System clock generator
