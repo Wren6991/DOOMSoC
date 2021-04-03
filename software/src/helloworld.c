@@ -13,7 +13,7 @@ int main() {
 	uint32_t pc, sp;
 	asm volatile (
 		"auipc %0, 0\n"
-		"mv %0, sp"
+		"mv %1, sp"
 		: "=r" (pc), "=r" (sp)
 	);
 	msg_uint("The program counter is: ", pc);

@@ -36,7 +36,7 @@ void __attribute__ ((naked, section(".vectors"))) reset_handler() {
 	main();
 }
 
-const char *splash_text = 
+const char *splash_text = "\n"
 "______ _____  ________  ___ _____       _____\n"
 "|  _  \\  _  ||  _  |  \\/  |/  ___|     /  __ \\\n"
 "| | | | | | || | | | .  . |\\ `--.  ___ | /  \\/\n"
@@ -47,7 +47,6 @@ const char *splash_text =
 
 int main() {
 	console_init();
-	delay_ms(4000);
 	console_puts(splash_text);
 	console_puts("SDRAM init...\n");
 	sdram_init_seq();

@@ -39,6 +39,10 @@ module doomsoc_fpga (
 	output wire        sdram_cas_n,
 	output wire        sdram_we_n,
 
+	// Reset button loopback
+	input  wire        btn_pwr_n,
+	output wire        user_programn,
+
 	// GPIO and serial peripherals
 	output wire        uart_tx,
 	input  wire        uart_rx
@@ -105,7 +109,7 @@ doomsoc_core #(
 wire blink;
 
 blinky #(
-	.CLK_HZ(25 * 1000 * 1000),
+	.CLK_HZ(80 * 1000 * 1000),
 	.BLINK_HZ(1)
 ) blinky_u (
 	.clk   (clk_sys),
@@ -122,5 +126,18 @@ assign led = {
 
 assign gp[27:0] = 28'h0;
 assign gn[27:0] = 28'h0;
+
+
+
+// Reset button loopback, slightly scary
+localparam RST_DELAY = 10;
+reg [RST_DELAY-1:0] rst_button_shift = {RST_DELAY{1'b0}};
+always @ (posedge clk_osc)
+	if (btn_pwr_n)
+		rst_button_shift <= {RST_DELAY{1'b0}};
+	else
+		rst_button_shift <= (rst_button_shift << 1) | 1'b1;
+
+assign user_programn = !rst_button_shift[RST_DELAY-1];
 
 endmodule

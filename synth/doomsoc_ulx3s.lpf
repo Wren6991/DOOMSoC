@@ -29,14 +29,14 @@ IOBUF PORT "led[6]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
 IOBUF PORT "led[7]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
 
 # ## Pushbuttons
-# LOCATE COMP "btn[0]" SITE "D6";  # BTN_PWRn (inverted logic)
+LOCATE COMP "btn_pwr_n" SITE "D6";  # BTN_PWRn (inverted logic)
 # LOCATE COMP "btn[1]" SITE "R1";  # FIRE1
 # LOCATE COMP "btn[2]" SITE "T1";  # FIRE2
 # LOCATE COMP "btn[3]" SITE "R18"; # UP
 # LOCATE COMP "btn[4]" SITE "V1";  # DOWN
 # LOCATE COMP "btn[5]" SITE "U1";  # LEFT
 # LOCATE COMP "btn[6]" SITE "H16"; # RIGHT
-# IOBUF PORT "btn[0]" PULLMODE=UP IO_TYPE=LVCMOS33;
+IOBUF PORT "btn_pwr_n" PULLMODE=UP IO_TYPE=LVCMOS33;
 # IOBUF PORT "btn[1]" PULLMODE=DOWN IO_TYPE=LVCMOS33;
 # IOBUF PORT "btn[2]" PULLMODE=DOWN IO_TYPE=LVCMOS33;
 # IOBUF PORT "btn[3]" PULLMODE=DOWN IO_TYPE=LVCMOS33;
@@ -376,8 +376,8 @@ IOBUF PORT "gn[27]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
 
 # ## PROGRAMN (reload bitstream from FLASH, exit from bootloader)
 # # PCB v2.0.5 and higher
-# LOCATE COMP "user_programn" SITE "M4";
-# IOBUF PORT "user_programn" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+LOCATE COMP "user_programn" SITE "M4";
+IOBUF PORT "user_programn" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
 
 # ## SHUTDOWN "power", "ram" sheet (connected from PCB v1.7.5)
 # # on PCB v1.7 shutdown is not connected to FPGA
