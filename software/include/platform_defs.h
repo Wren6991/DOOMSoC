@@ -4,7 +4,6 @@
 #include "addressmap.h"
 
 #ifndef CLK_SYS_MHZ
-#warning Using default value for CLK_SYS_MHZ
 #define CLK_SYS_MHZ 80
 #endif
 

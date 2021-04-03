@@ -6,8 +6,11 @@
 #include "delay.h"
 #include "sdram.h"
 
-#define BOOT2_LOAD_SIZE (16 * 1024)
+#define BOOT2_LOAD_SIZE 16384
+#define CACHE_SIZE_WORDS 512
 
+#define xstr(s) str(s)
+#define str(s) #s
 
 // This application is built with -nostartfiles as it must fit into a (as small
 // as) 1kB cache. However its runtime requirements are pretty minimal. This
@@ -44,6 +47,7 @@ const char *splash_text =
 
 int main() {
 	console_init();
+	delay_ms(4000);
 	console_puts(splash_text);
 	console_puts("SDRAM init...\n");
 	sdram_init_seq();
@@ -52,16 +56,21 @@ int main() {
 		console_puts("Skipping SDRAM load in simulation.\n");
 	}
 	else {
-		console_puts("Loading ");
-		console_putint(BOOT2_LOAD_SIZE);
-		console_puts(" bytes to SDRAM.\n");
-		for (int i = 0; i < BOOT2_LOAD_SIZE; ++i) {
+		console_puts("Loading " xstr(BOOT2_LOAD_SIZE) " bytes to SDRAM.\n<<<IMG<<<");
+		for (int i = 0; i < BOOT2_LOAD_SIZE; ++i)
 			((volatile uint8_t*)SDRAM_BASE)[i] = (uint8_t)console_getc();
+		console_puts("\nOK. Flushing...\n");
+		for (int i = 0; i < CACHE_SIZE_WORDS * 2; ++i)
+			(void)((volatile uint32_t*)SDRAM_BASE)[i];
+#if 0
+		console_puts("Dumping first kB:\n");
+		for (int i = 0; i < 256; ++i) {
+			console_putint(((volatile uint32_t*)SDRAM_BASE)[i]);
+			console_puts(i % 8 == 7 ? "\n" : " ");
 		}
+#endif
 	}
-	uintptr_t boot2_entry = SDRAM_BASE + VECTOR_TABLE_SIZE;
-	console_puts("Entering SDRAM at\n");
-	console_putint(boot2_entry);
-	((void(*)())boot2_entry)();
+	console_puts("Entering SDRAM via reset handler\n");
+	((void(*)())SDRAM_BASE + VECTOR_TABLE_SIZE)();
 	__builtin_unreachable();
 }
