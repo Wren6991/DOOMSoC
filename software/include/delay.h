@@ -3,13 +3,9 @@
 
 #include <stdint.h>
 
-#ifndef CLK_SYS_MHZ
-#warning No value supplied for CLK_SYS_MHZ. Using a default value of 50 MHz.
-#define CLK_SYS_MHZ 50
-#endif 
+#include "platform_defs.h"
 
-static inline void delay_ms(uint32_t ms)
-{
+static inline void delay_ms(uint32_t ms) {
 	uint32_t delay_count = (ms * 1000 * CLK_SYS_MHZ) / 3;
 	asm volatile (
 		"1:                 \n\t"
@@ -19,8 +15,7 @@ static inline void delay_ms(uint32_t ms)
 	);
 }
 
-static inline void delay_us(uint32_t us)
-{
+static inline void delay_us(uint32_t us) {
 	uint32_t delay_count = (us * CLK_SYS_MHZ) / 3;
 	asm volatile (
 		"1:                 \n\t"

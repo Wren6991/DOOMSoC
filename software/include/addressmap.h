@@ -1,7 +1,6 @@
 #ifndef _ADDRESSMAP_H_
 #define _ADDRESSMAP_H_
 
-// Temporary SRAM
 #define SRAM_BASE (0x0ul << 28)
 #define SRAM_SIZE (8 * 1024)
 

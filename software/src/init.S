@@ -82,7 +82,7 @@ j \name
 .option norelax
 
 .reset_handler:
-	li sp, SRAM_BASE + SRAM_SIZE
+	li sp, SDRAM_BASE + SDRAM_SIZE
 	la t0, .vector_table
 	csrw mtvec, t0
 

@@ -299,7 +299,7 @@ wire               bgen0_pslverr;
 // Processor and caches
 
 hazard5_cpu_2port #(
-	.RESET_VECTOR    (BOOTRAM_BASE + 32'hc0),
+	.RESET_VECTOR    (BOOTRAM_BASE + 32'h00),
 	.MTVEC_INIT      (SDRAM_BASE),
 	.MTVEC_WMASK     (32'h0000_0000),      // Not modifiable
 
@@ -738,7 +738,7 @@ ahbl_sdram #(
 
 	.FIXED_TIMINGS      (1), // 1: use fixed values, 0: allow programming via APB.
 	// Following are for AS4C32M16SB-7 at (aspirational) 80 MHz
-	.FIXED_TIME_RC      (3'd4   ), // 63 ns 5 clk
+	.FIXED_TIME_RC      (3'd5   ), // 63 ns 6 clk (just!)
 	.FIXED_TIME_RCD     (3'd1   ), // 21 ns 2 clk
 	.FIXED_TIME_RP      (3'd1   ), // 21 ns 2 clk
 	.FIXED_TIME_RRD     (3'd1   ), // 14 ns 2 clk

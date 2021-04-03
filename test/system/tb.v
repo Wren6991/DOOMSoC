@@ -1,5 +1,10 @@
 module tb;
 
+// Debug >= 1: print mode register set
+// Debug >= 2: print row operations
+// Debug >= 3: print column operations
+localparam SDRAM_DEBUG_LEVEL = 1;
+
 localparam W_SDRAM_BANKSEL = 2;
 localparam W_SDRAM_ADDR = 13;
 localparam W_SDRAM_DATA = 16;
@@ -31,7 +36,7 @@ wire                       uart_tx;
 wire                       uart_rx;
 
 doomsoc_core #(
-	.BOOTRAM_PRELOAD("../ram_init32.hex"),
+	.BOOTRAM_PRELOAD("../bootram_init.hex"),
 	.W_SDRAM_BANKSEL(2),
 	.W_SDRAM_ADDR(13),
 	.W_SDRAM_DATA(W_SDRAM_DATA)
@@ -59,7 +64,10 @@ doomsoc_core #(
 	.uart_rx     (uart_rx)
 );
 
-mt48lc32m16a2 sdram_model (
+mt48lc32m16a2 #(
+	.PRELOAD_FILE("../sdram_init.hex"),
+	.Debug       (SDRAM_DEBUG_LEVEL)
+) sdram_model (
 	.Dq    (sdram_dq),
 	.Addr  (sdram_a),
 	.Ba    (sdram_ba),

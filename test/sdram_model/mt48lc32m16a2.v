@@ -72,6 +72,13 @@ module mt48lc32m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
    
    // (luke) parameterise init hex file name
    parameter PRELOAD_FILE = "";
+   // Takes a while to run the damn for loop, so limit the size by default
+   parameter PRELOAD_SIZE_WORDS = 16 * 1024; // 64 kB
+   // (luke) make debug more granular.
+   // Debug >= 1: print mode register set
+   // Debug >= 2: print row operations
+   // Debug >= 3: print column operations
+   parameter Debug = 1;
 
    // Common to all parts
    parameter data_bits =      16;
@@ -149,7 +156,7 @@ module mt48lc32m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
     // Write Burst Mode
     wire      Write_burst_mode = Mode_reg[9];
 
-    wire      Debug            = 1'b1;                          // Debug messages : 1 = On
+    // wire      Debug            = 1'b1;                          // Debug messages : 1 = On
     wire      Dq_chk           = Sys_clk & Data_in_enable;      // Check setup/hold time for DQ
     
     assign    Dq               = Dq_reg;                        // DQ buffer
@@ -234,16 +241,18 @@ module mt48lc32m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
 // `endif
 
 	if (PRELOAD_FILE != "") begin: mem_preload
-		reg [31:0] readmem_buf [0:4*mem_sizes-1];
-		integer row, bank, col, full_addr;
+		reg [31:0] readmem_buf [0:PRELOAD_SIZE_WORDS-1];
+		reg [addr_bits-1:0] row;
+		reg [1:0] bank;
+		reg [col_bits-1:0] col;
+		integer full_addr;
 		reg [15:0] preload_tmp;
-		$display("Initialising %m from hex file %s in row:bank:column order\n", PRELOAD_FILE);
+		$display("Initialising %0d bytes of %m from \"%s\" in row:bank:column order\n", PRELOAD_SIZE_WORDS * 4, PRELOAD_FILE);
 		$readmemh(PRELOAD_FILE, readmem_buf);
-		for (full_addr = 0; full_addr < 1 << (addr_bits + col_bits + 2); full_addr = full_addr + 1) begin
-			col = full_addr[0 +: col_bits];
-			bank = full_addr[col_bits +: 2];
-			row = full_addr[col_bits + 2 +: addr_bits];
+		for (full_addr = 0; full_addr < PRELOAD_SIZE_WORDS * 2; full_addr = full_addr + 1) begin
+			{row, bank, col} = full_addr;
 			preload_tmp = readmem_buf[full_addr / 2] >> (full_addr & 1 ? 16 : 0);
+			// $display("%x %x %x <- %x", row, bank, col, preload_tmp);
 			if (bank == 0)
 				Bank0[{row, col}] = preload_tmp;
 			else if (bank == 1)
@@ -252,6 +261,8 @@ module mt48lc32m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
 				Bank2[{row, col}] = preload_tmp;
 			else if (bank == 3)
 				Bank3[{row, col}] = preload_tmp;
+			else
+				$finish;
 		end
 	end
 
@@ -332,7 +343,7 @@ end
 
         // Auto Refresh
         if (Aref_enable === 1'b1) begin
-            if (Debug) begin
+            if (Debug >= 2) begin
                 $display ("%m : at time %t AREF : Auto Refresh", $time);
             end
 
@@ -367,7 +378,7 @@ end
             Mode_reg = Addr;
 
             // Decode CAS Latency, Burst Length, Burst Type, and Write Burst Mode
-            if (Debug) begin
+            if (Debug >= 1) begin
                 $display ("%m : at time %t LMR  : Load Mode Register", $time);
                 // CAS Latency
                 case (Addr[6 : 4])
@@ -441,7 +452,7 @@ end
             // Activate Bank 0
             if (Ba === 2'b00 && Pc_b0 === 1'b1) begin
                 // Debug Message
-                if (Debug) begin
+                if (Debug >= 2) begin
                     $display ("%m : at time %t ACT  : Bank = 0 Row = %h", $time, Addr);
                 end
 
@@ -466,7 +477,7 @@ end
 
             if (Ba == 2'b01 && Pc_b1 == 1'b1) begin
                 // Debug Message
-                if (Debug) begin
+                if (Debug >= 2) begin
                     $display ("%m : at time %t ACT  : Bank = 1 Row = %h", $time, Addr);
                 end
 
@@ -491,7 +502,7 @@ end
 
             if (Ba == 2'b10 && Pc_b2 == 1'b1) begin
                 // Debug Message
-                if (Debug) begin
+                if (Debug >= 2) begin
                     $display ("%m : at time %t ACT  : Bank = 2 Row = %h", $time, Addr);
                 end
 
@@ -516,7 +527,7 @@ end
 
             if (Ba == 2'b11 && Pc_b3 == 1'b1) begin
                 // Debug Message
-                if (Debug) begin
+                if (Debug >= 2) begin
                     $display ("%m : at time %t ACT  : Bank = 3 Row = %h", $time, Addr);
                 end
 
@@ -666,7 +677,7 @@ end
             end
 
             // Display debug message
-            if (Debug) begin
+            if (Debug >= 3) begin
                 $display ("%m : at time %t BST  : Burst Terminate",$time);
             end
         end
@@ -708,7 +719,7 @@ end
                     RW_interrupt_counter[RW_interrupt_bank] = 0;
 
                     // Display debug message
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Read interrupt Write with Autoprecharge", $time);
                     end
                 end
@@ -753,7 +764,7 @@ end
                     RW_interrupt_write[RW_interrupt_bank] = 1'b1;
 
                     // Display debug message
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Read Bank %h interrupt Write Bank %h with Autoprecharge", $time, Ba, RW_interrupt_bank);
                     end
                 end
@@ -768,7 +779,7 @@ end
                     RW_interrupt_read[RW_interrupt_bank] = 1'b1;
 
                     // Display debug message
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Write Bank %h interrupt Read Bank %h with Autoprecharge", $time, Ba, RW_interrupt_bank);
                     end
                 end
@@ -806,7 +817,7 @@ end
                     Pc_b0 = 1'b1;
                     Act_b0 = 1'b0;
                     RP_chk0 = $time + tWRa;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 0", $time);
                     end
             end
@@ -824,7 +835,7 @@ end
                     Pc_b1 = 1'b1;
                     Act_b1 = 1'b0;
                     RP_chk1 = $time + tWRa;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 1", $time);
                     end
             end
@@ -842,7 +853,7 @@ end
                     Pc_b2 = 1'b1;
                     Act_b2 = 1'b0;
                     RP_chk2 = $time + tWRa;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 2", $time);
                     end
             end
@@ -860,7 +871,7 @@ end
                     Pc_b3 = 1'b1;
                     Act_b3 = 1'b0;
                     RP_chk3 = $time + tWRa;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 3", $time);
                     end
             end
@@ -884,7 +895,7 @@ end
                     Auto_precharge[0] = 1'b0;
                     Read_precharge[0] = 1'b0;
                     RW_interrupt_read[0] = 1'b0;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 0", $time);
                     end
             end
@@ -902,7 +913,7 @@ end
                     Auto_precharge[1] = 1'b0;
                     Read_precharge[1] = 1'b0;
                     RW_interrupt_read[1] = 1'b0;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 1", $time);
                     end
             end
@@ -920,7 +931,7 @@ end
                     Auto_precharge[2] = 1'b0;
                     Read_precharge[2] = 1'b0;
                     RW_interrupt_read[2] = 1'b0;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display ("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 2", $time);
                     end
             end
@@ -938,7 +949,7 @@ end
                     Auto_precharge[3] = 1'b0;
                     Read_precharge[3] = 1'b0;
                     RW_interrupt_read[3] = 1'b0;
-                    if (Debug) begin
+                    if (Debug >= 2) begin
                         $display("%m : at time %t NOTE : Start Internal Auto Precharge for Bank 3", $time);
                     end
             end
@@ -1021,11 +1032,11 @@ end
                 // Record tWR for manual precharge
                 WR_chkm [Bank] = $time;
 
-                if (Debug) begin
+                if (Debug >= 3) begin
                     $display("%m : at time %t WRITE: Bank = %h Row = %h, Col = %h, Data = %h", $time, Bank, Row, Col, Dq_dqm);
                 end
             end else begin
-                if (Debug) begin
+                if (Debug >= 3) begin
                     $display("%m : at time %t WRITE: Bank = %h Row = %h, Col = %h, Data = Hi-Z due to DQM", $time, Bank, Row, Col);
                 end
             end
@@ -1053,12 +1064,12 @@ end
             // Display debug message
             if (Dqm_reg0 !== 2'b11) begin
                 Dq_reg = #tAC Dq_dqm;
-                if (Debug) begin
+                if (Debug >= 3) begin
                     $display("%m : at time %t READ : Bank = %h Row = %h, Col = %h, Data = %h", $time, Bank, Row, Col, Dq_reg);
                 end
             end else begin
                 Dq_reg = #tHZ {data_bits{1'bz}};
-                if (Debug) begin
+                if (Debug >= 3) begin
                     $display("%m : at time %t READ : Bank = %h Row = %h, Col = %h, Data = Hi-Z due to DQM", $time, Bank, Row, Col);
                 end
             end

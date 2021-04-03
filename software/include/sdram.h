@@ -1,5 +1,5 @@
+#include "platform_defs.h"
 #include "hw/sdram_ctrl_regs.h"
-#include "addressmap.h"
 #include "delay.h"
 
 struct sdram_ctrl_hw {
@@ -14,6 +14,10 @@ struct sdram_ctrl_hw {
 #define SDRAM_CMD_REFRESH       0x1u
 #define SDRAM_CMD_PRECHARGE     0x2u
 #define SDRAM_CMD_LOAD_MODE_REG 0x0u
+
+#if CLK_SYS_MHZ != 80
+#warning SDRAM timing parameters are for the wrong system clock frequency
+#endif
 
 static inline void sdram_init_seq() {
 	// Power up (start transmitting clock) but don't enable automatic operations
@@ -45,7 +49,7 @@ static inline void sdram_init_seq() {
 		(1u << SDRAM_TIME_RRD_LSB) | // tRRD - 1    14 ns 2 clk
 		(1u << SDRAM_TIME_RP_LSB)  | // tRP - 1     21 ns 2 clk
 		(1u << SDRAM_TIME_RCD_LSB) | // tRCD - 1    21 ns 2 clk
-		(4u << SDRAM_TIME_RC_LSB);   // tRC - 1     63 ns 5 clk (also tRFC)
+		(5u << SDRAM_TIME_RC_LSB);   // tRC - 1     63 ns 6 clk (also tRFC)
 
 	mm_sdram_ctrl->refresh = 623; // 7.8 us
 
