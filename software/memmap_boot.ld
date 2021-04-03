@@ -8,8 +8,8 @@
 
 MEMORY
   {
-   /* RAM (wx)  : ORIGIN = 0x20000000, LENGTH = 512K*/
-    IRAM (wx) : ORIGIN = 0x20080000, LENGTH = 8K
+    RAM (wx)  : ORIGIN = 0x0, LENGTH = 8K
+    ICACHE (wx) : ORIGIN = 0xf0000000, LENGTH = 2K
   }
 
 OUTPUT_FORMAT("elf32-littleriscv", "elf32-littleriscv",

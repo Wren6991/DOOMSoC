@@ -2,8 +2,11 @@
 #define _ADDRESSMAP_H_
 
 // Temporary SRAM
-#define SRAM_BASE (0x2ul << 28)
+#define SRAM_BASE (0x0ul << 28)
 #define SRAM_SIZE (8 * 1024)
+
+#define SDRAM_BASE (0x2ul << 28)
+#define SDRAM_SIZE (64 * 1024 * 1024)
 
 #define APB_BASE        (0x4ul << 28)
 #define UART_BASE       (APB_BASE + 0x0000)

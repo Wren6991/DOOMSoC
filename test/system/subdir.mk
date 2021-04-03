@@ -4,7 +4,7 @@ DOTF=../tb.f
 SRCS=init.S $(TEST).c
 
 INCDIRS=../include
-LDSCRIPT=../memmap_2nd.ld
+LDSCRIPT=../memmap_boot.ld
 # Disassemble all sections
 DISASSEMBLE=-D
 
@@ -13,7 +13,7 @@ include $(SCRIPTS)/sim.mk
 compile:
 	make -C $(SOFTWARE)/build APPNAME=$(TEST) LDSCRIPT=$(LDSCRIPT)
 	cp $(SOFTWARE)/build/$(TEST)8.hex ram_init8.hex
-	$(SCRIPTS)/vhexwidth -w 32 -b 0x20000000 ram_init8.hex -o ram_init32.hex
+	$(SCRIPTS)/vhexwidth -w 32 -b 0x0 ram_init8.hex -o ram_init32.hex
 
 test:
 	$(MAKE) sim TEST=$(TEST) > sim.log

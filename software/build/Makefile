@@ -1,7 +1,7 @@
 SRC_DIR=../src
 SRCS=$(SRC_DIR)/init.S $(SRC_DIR)/$(APPNAME).c
 INCDIRS=../include
-LDSCRIPT=../memmap_2nd.ld
+LDSCRIPT=../memmap_boot.ld
 
 MARCH=rv32im
 # Disassemble all sections

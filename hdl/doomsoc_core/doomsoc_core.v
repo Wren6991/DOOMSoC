@@ -57,11 +57,13 @@ localparam W_HADDR = 32;
 localparam W_HDATA = 32;
 localparam W_PADDR = 16;
 
-localparam SDRAM_BASE = 32'h2000_0000;
-localparam APB_BASE   = 32'h4000_0000;
+localparam BOOTRAM_BASE = 32'h0000_0000;
+localparam SDRAM_BASE   = 32'h2000_0000;
+localparam APB_BASE     = 32'h4000_0000;
 
 localparam ICACHE_SIZE_BYTES = 2 * 1024;
 localparam DCACHE_SIZE_BYTES = 2 * 1024;
+localparam W_CACHE_LINE = 4 * W_HDATA;
 
 // ----------------------------------------------------------------------------
 // Resets
@@ -92,6 +94,7 @@ reset_sync reset_sync_pix (
 // ----------------------------------------------------------------------------
 // Instance wiring
 
+// Proc + cache bus signals
 wire               icache_hready;
 wire               icache_hresp;
 wire [W_HADDR-1:0] icache_haddr;
@@ -141,166 +144,162 @@ wire               proc_d_hmastlock;
 wire [W_HDATA-1:0] proc_d_hwdata;
 wire [W_HDATA-1:0] proc_d_hrdata;
 
-// Temporary SRAM for running some test code
-wire                sram_hready;
-wire                sram_hready_resp;
-wire                sram_hresp;
-wire [W_HADDR-1:0]  sram_haddr;
-wire                sram_hwrite;
-wire [1:0]          sram_htrans;
-wire [2:0]          sram_hsize;
-wire [2:0]          sram_hburst;
-wire [3:0]          sram_hprot;
-wire                sram_hmastlock;
-wire [W_HDATA-1:0]  sram_hwdata;
-wire [W_HDATA-1:0]  sram_hrdata;
+// SDRAM burst port signals
 
-wire                bridge_hready;
-wire                bridge_hready_resp;
-wire                bridge_hresp;
-wire [W_HADDR-1:0]  bridge_haddr;
-wire                bridge_hwrite;
-wire [1:0]          bridge_htrans;
-wire [2:0]          bridge_hsize;
-wire [2:0]          bridge_hburst;
-wire [3:0]          bridge_hprot;
-wire                bridge_hmastlock;
-wire [W_HDATA-1:0]  bridge_hwdata;
-wire [W_HDATA-1:0]  bridge_hrdata;
+wire               sdram_dcache_hready;
+wire               sdram_dcache_hready_resp;
+wire               sdram_dcache_hresp;
+wire [W_HADDR-1:0] sdram_dcache_haddr;
+wire               sdram_dcache_hwrite;
+wire [1:0]         sdram_dcache_htrans;
+wire [2:0]         sdram_dcache_hsize;
+wire [2:0]         sdram_dcache_hburst;
+wire [3:0]         sdram_dcache_hprot;
+wire [3:0]         sdram_dcache_hprot_raw;
+wire               sdram_dcache_hmastlock;
+wire [W_HDATA-1:0] sdram_dcache_hwdata;
+wire [W_HDATA-1:0] sdram_dcache_hrdata;
 
-wire [W_PADDR-1:0]  bridge_paddr;
-wire                bridge_psel;
-wire                bridge_penable;
-wire                bridge_pwrite;
-wire [W_HDATA-1:0]  bridge_pwdata;
-wire                bridge_pready;
-wire [W_HDATA-1:0]  bridge_prdata;
-wire                bridge_pslverr;
+wire               sdram_icache_hready;
+wire               sdram_icache_hready_resp;
+wire               sdram_icache_hresp;
+wire [W_HADDR-1:0] sdram_icache_haddr;
+wire               sdram_icache_hwrite;
+wire [1:0]         sdram_icache_htrans;
+wire [2:0]         sdram_icache_hsize;
+wire [2:0]         sdram_icache_hburst;
+wire [3:0]         sdram_icache_hprot;
+wire [3:0]         sdram_icache_hprot_raw;
+wire               sdram_icache_hmastlock;
+wire [W_HDATA-1:0] sdram_icache_hwdata;
+wire [W_HDATA-1:0] sdram_icache_hrdata;
 
-wire [W_PADDR-1:0]  uart_paddr;
-wire                uart_psel;
-wire                uart_penable;
-wire                uart_pwrite;
-wire [W_HDATA-1:0]  uart_pwdata;
-wire                uart_pready;
-wire [W_HDATA-1:0]  uart_prdata;
-wire                uart_pslverr;
+// video port currently hooked up to a burstgen for testing purposes
+wire               sdram_video_hready;
+wire               sdram_video_hready_resp;
+wire               sdram_video_hresp;
+wire [W_HADDR-1:0] sdram_video_haddr;
+wire               sdram_video_hwrite;
+wire [1:0]         sdram_video_htrans;
+wire [2:0]         sdram_video_hsize;
+wire [2:0]         sdram_video_hburst;
+wire [3:0]         sdram_video_hprot;
+wire [3:0]         sdram_video_hprot_raw;
+wire               sdram_video_hmastlock;
+wire [W_HDATA-1:0] sdram_video_hwdata;
+wire [W_HDATA-1:0] sdram_video_hrdata;
 
-wire                uart_irq;
+// Boot RAM + bus arbiter
 
-wire [W_PADDR-1:0]  sdram_paddr;
-wire                sdram_psel;
-wire                sdram_penable;
-wire                sdram_pwrite;
-wire [W_HDATA-1:0]  sdram_pwdata;
-wire                sdram_pready;
-wire [W_HDATA-1:0]  sdram_prdata;
-wire                sdram_pslverr;
+wire               sram_dcache_hready;
+wire               sram_dcache_hready_resp;
+wire               sram_dcache_hresp;
+wire [W_HADDR-1:0] sram_dcache_haddr;
+wire               sram_dcache_hwrite;
+wire [1:0]         sram_dcache_htrans;
+wire [2:0]         sram_dcache_hsize;
+wire [2:0]         sram_dcache_hburst;
+wire [3:0]         sram_dcache_hprot;
+wire [3:0]         sram_dcache_hprot_raw;
+wire               sram_dcache_hmastlock;
+wire [W_HDATA-1:0] sram_dcache_hwdata;
+wire [W_HDATA-1:0] sram_dcache_hrdata;
 
-wire [W_PADDR-1:0]  tbman_paddr;
-wire                tbman_psel;
-wire                tbman_penable;
-wire                tbman_pwrite;
-wire [W_HDATA-1:0]  tbman_pwdata;
-wire                tbman_pready;
-wire [W_HDATA-1:0]  tbman_prdata;
-wire                tbman_pslverr;
+wire               sram_icache_hready;
+wire               sram_icache_hready_resp;
+wire               sram_icache_hresp;
+wire [W_HADDR-1:0] sram_icache_haddr;
+wire               sram_icache_hwrite;
+wire [1:0]         sram_icache_htrans;
+wire [2:0]         sram_icache_hsize;
+wire [2:0]         sram_icache_hburst;
+wire [3:0]         sram_icache_hprot;
+wire [3:0]         sram_icache_hprot_raw;
+wire               sram_icache_hmastlock;
+wire [W_HDATA-1:0] sram_icache_hwdata;
+wire [W_HDATA-1:0] sram_icache_hrdata;
 
+wire               sram_hready;
+wire               sram_hready_resp;
+wire               sram_hresp;
+wire [W_HADDR-1:0] sram_haddr;
+wire               sram_hwrite;
+wire [1:0]         sram_htrans;
+wire [2:0]         sram_hsize;
+wire [2:0]         sram_hburst;
+wire [3:0]         sram_hprot;
+wire               sram_hmastlock;
+wire [W_HDATA-1:0] sram_hwdata;
+wire [W_HDATA-1:0] sram_hrdata;
 
-// APB->AHBL burst generator
+// APB bridge and APB fabric
 
-wire [W_PADDR-1:0]  bgen0_paddr;
-wire                bgen0_psel;
-wire                bgen0_penable;
-wire                bgen0_pwrite;
-wire [W_HDATA-1:0]  bgen0_pwdata;
-wire                bgen0_pready;
-wire [W_HDATA-1:0]  bgen0_prdata;
-wire                bgen0_pslverr;
+wire               bridge_hready;
+wire               bridge_hready_resp;
+wire               bridge_hresp;
+wire [W_HADDR-1:0] bridge_haddr;
+wire               bridge_hwrite;
+wire [1:0]         bridge_htrans;
+wire [2:0]         bridge_hsize;
+wire [2:0]         bridge_hburst;
+wire [3:0]         bridge_hprot;
+wire               bridge_hmastlock;
+wire [W_HDATA-1:0] bridge_hwdata;
+wire [W_HDATA-1:0] bridge_hrdata;
 
-wire [W_HADDR-1:0]  bgen0_haddr;
-wire                bgen0_hwrite;
-wire [1:0]          bgen0_htrans;
-wire [2:0]          bgen0_hsize;
-wire [2:0]          bgen0_hburst;
-wire [3:0]          bgen0_hprot;
-wire                bgen0_hmastlock;
-wire                bgen0_hready;
-wire                bgen0_hresp;
-wire [W_HDATA-1:0]  bgen0_hwdata;
-wire [W_HDATA-1:0]  bgen0_hrdata;
+wire [W_PADDR-1:0] bridge_paddr;
+wire               bridge_psel;
+wire               bridge_penable;
+wire               bridge_pwrite;
+wire [W_HDATA-1:0] bridge_pwdata;
+wire               bridge_pready;
+wire [W_HDATA-1:0] bridge_prdata;
+wire               bridge_pslverr;
 
+wire [W_PADDR-1:0] uart_paddr;
+wire               uart_psel;
+wire               uart_penable;
+wire               uart_pwrite;
+wire [W_HDATA-1:0] uart_pwdata;
+wire               uart_pready;
+wire [W_HDATA-1:0] uart_prdata;
+wire               uart_pslverr;
 
-wire [W_PADDR-1:0]  bgen1_paddr;
-wire                bgen1_psel;
-wire                bgen1_penable;
-wire                bgen1_pwrite;
-wire [W_HDATA-1:0]  bgen1_pwdata;
-wire                bgen1_pready;
-wire [W_HDATA-1:0]  bgen1_prdata;
-wire                bgen1_pslverr;
+wire               uart_irq;
 
-wire [W_HADDR-1:0]  bgen1_haddr;
-wire                bgen1_hwrite;
-wire [1:0]          bgen1_htrans;
-wire [2:0]          bgen1_hsize;
-wire [2:0]          bgen1_hburst;
-wire [3:0]          bgen1_hprot;
-wire                bgen1_hmastlock;
-wire                bgen1_hready;
-wire                bgen1_hresp;
-wire [W_HDATA-1:0]  bgen1_hwdata;
-wire [W_HDATA-1:0]  bgen1_hrdata;
+wire [W_PADDR-1:0] sdram_paddr;
+wire               sdram_psel;
+wire               sdram_penable;
+wire               sdram_pwrite;
+wire [W_HDATA-1:0] sdram_pwdata;
+wire               sdram_pready;
+wire [W_HDATA-1:0] sdram_prdata;
+wire               sdram_pslverr;
 
+wire [W_PADDR-1:0] tbman_paddr;
+wire               tbman_psel;
+wire               tbman_penable;
+wire               tbman_pwrite;
+wire [W_HDATA-1:0] tbman_pwdata;
+wire               tbman_pready;
+wire [W_HDATA-1:0] tbman_prdata;
+wire               tbman_pslverr;
 
-wire [W_PADDR-1:0]  bgen2_paddr;
-wire                bgen2_psel;
-wire                bgen2_penable;
-wire                bgen2_pwrite;
-wire [W_HDATA-1:0]  bgen2_pwdata;
-wire                bgen2_pready;
-wire [W_HDATA-1:0]  bgen2_prdata;
-wire                bgen2_pslverr;
+wire [W_PADDR-1:0] bgen0_paddr;
+wire               bgen0_psel;
+wire               bgen0_penable;
+wire               bgen0_pwrite;
+wire [W_HDATA-1:0] bgen0_pwdata;
+wire               bgen0_pready;
+wire [W_HDATA-1:0] bgen0_prdata;
+wire               bgen0_pslverr;
 
-wire [W_HADDR-1:0]  bgen2_haddr;
-wire                bgen2_hwrite;
-wire [1:0]          bgen2_htrans;
-wire [2:0]          bgen2_hsize;
-wire [2:0]          bgen2_hburst;
-wire [3:0]          bgen2_hprot;
-wire                bgen2_hmastlock;
-wire                bgen2_hready;
-wire                bgen2_hresp;
-wire [W_HDATA-1:0]  bgen2_hwdata;
-wire [W_HDATA-1:0]  bgen2_hrdata;
-
-
-wire [W_PADDR-1:0]  bgen3_paddr;
-wire                bgen3_psel;
-wire                bgen3_penable;
-wire                bgen3_pwrite;
-wire [W_HDATA-1:0]  bgen3_pwdata;
-wire                bgen3_pready;
-wire [W_HDATA-1:0]  bgen3_prdata;
-wire                bgen3_pslverr;
-
-wire [W_HADDR-1:0]  bgen3_haddr;
-wire                bgen3_hwrite;
-wire [1:0]          bgen3_htrans;
-wire [2:0]          bgen3_hsize;
-wire [2:0]          bgen3_hburst;
-wire [3:0]          bgen3_hprot;
-wire                bgen3_hmastlock;
-wire                bgen3_hready;
-wire                bgen3_hresp;
-wire [W_HDATA-1:0]  bgen3_hwdata;
-wire [W_HDATA-1:0]  bgen3_hrdata;
 
 // ----------------------------------------------------------------------------
 // Processor and caches
 
 hazard5_cpu_2port #(
-	.RESET_VECTOR    (SDRAM_BASE + 32'hc0),
+	.RESET_VECTOR    (BOOTRAM_BASE + 32'hc0),
 	.MTVEC_INIT      (SDRAM_BASE),
 	.MTVEC_WMASK     (32'h0000_0000),      // Not modifiable
 
@@ -353,7 +352,8 @@ assign proc_d_hprot = {{2{proc_d_haddr[31:30] == 2'b00}}, proc_d_hprot_raw[1:0]}
 ahb_cache_writeback #(
 	.W_ADDR (W_HADDR),
 	.W_DATA (W_HDATA),
-	.DEPTH  (DCACHE_SIZE_BYTES / 4)
+	.W_LINE (W_CACHE_LINE),
+	.DEPTH  (DCACHE_SIZE_BYTES / (W_CACHE_LINE / 8))
 ) dcache (
 	.clk             (clk_sys),
 	.rst_n           (rst_n_sys),
@@ -388,9 +388,8 @@ ahb_cache_writeback #(
 ahb_cache_readonly #(
 	.W_ADDR       (W_HADDR),
 	.W_DATA       (W_HDATA),
-	// .TMEM_PRELOAD ("icache_tag_preload.hex"),
-	// .DMEM_PRELOAD ("icache_preload.hex"),
-	.DEPTH        (ICACHE_SIZE_BYTES / 4)
+	.W_LINE       (W_CACHE_LINE),
+	.DEPTH        (ICACHE_SIZE_BYTES / (W_CACHE_LINE / 8))
 ) icache (
 	.clk             (clk_sys),
 	.rst_n           (rst_n_sys),
@@ -535,43 +534,115 @@ dvi_serialiser serclk (
 // ----------------------------------------------------------------------------
 // Busfabric
 
-ahbl_crossbar #(
-	.N_MASTERS (2),
-	.N_SLAVES  (2),
+
+ahbl_splitter #(
+	.N_PORTS   (2),
 	.W_ADDR    (W_HADDR),
 	.W_DATA    (W_HDATA),
-	.ADDR_MAP  ({     APB_BASE,    SDRAM_BASE}),
+	.ADDR_MAP  ({   SDRAM_BASE,  BOOTRAM_BASE}),
 	.ADDR_MASK ({32'hf000_0000, 32'hf000_0000})
-) proc_ahbl_split (
+) icache_bus_splitter (
 	.clk             (clk_sys),
 	.rst_n           (rst_n_sys),
 
-	.src_hready_resp ({icache_hready    , dcache_hready    }), // Tie HREADYOUT -> HREADY as this is top of fabric
-	.src_hresp       ({icache_hresp     , dcache_hresp     }),
-	.src_haddr       ({icache_haddr     , dcache_haddr     }),
-	.src_hwrite      ({icache_hwrite    , dcache_hwrite    }),
-	.src_htrans      ({icache_htrans    , dcache_htrans    }),
-	.src_hsize       ({icache_hsize     , dcache_hsize     }),
-	.src_hburst      ({icache_hburst    , dcache_hburst    }),
-	.src_hprot       ({icache_hprot     , dcache_hprot     }),
-	.src_hmastlock   ({icache_hmastlock , dcache_hmastlock }),
-	.src_hwdata      ({icache_hwdata    , dcache_hwdata    }),
-	.src_hrdata      ({icache_hrdata    , dcache_hrdata    }),
+	.src_hready      (icache_hready   ),
+	.src_hready_resp (icache_hready   ), // Tie HREADYOUT -> HREADY as this is top of fabric
+	.src_hresp       (icache_hresp    ),
+	.src_haddr       (icache_haddr    ),
+	.src_hwrite      (icache_hwrite   ),
+	.src_htrans      (icache_htrans   ),
+	.src_hsize       (icache_hsize    ),
+	.src_hburst      (icache_hburst   ),
+	.src_hprot       (icache_hprot    ),
+	.src_hmastlock   (icache_hmastlock),
+	.src_hwdata      (icache_hwdata   ),
+	.src_hrdata      (icache_hrdata   ),
 
-	.dst_hready      ({bridge_hready      , sram_hready     }),
-	.dst_hready_resp ({bridge_hready_resp , sram_hready_resp}),
-	.dst_hresp       ({bridge_hresp       , sram_hresp      }),
-	.dst_haddr       ({bridge_haddr       , sram_haddr      }),
-	.dst_hwrite      ({bridge_hwrite      , sram_hwrite     }),
-	.dst_htrans      ({bridge_htrans      , sram_htrans     }),
-	.dst_hsize       ({bridge_hsize       , sram_hsize      }),
-	.dst_hburst      ({bridge_hburst      , sram_hburst     }),
-	.dst_hprot       ({bridge_hprot       , sram_hprot      }),
-	.dst_hmastlock   ({bridge_hmastlock   , sram_hmastlock  }),
-	.dst_hwdata      ({bridge_hwdata      , sram_hwdata     }),
-	.dst_hrdata      ({bridge_hrdata      , sram_hrdata     })
+	.dst_hready      ({sdram_icache_hready      , sram_icache_hready     }),
+	.dst_hready_resp ({sdram_icache_hready_resp , sram_icache_hready_resp}),
+	.dst_hresp       ({sdram_icache_hresp       , sram_icache_hresp      }),
+	.dst_haddr       ({sdram_icache_haddr       , sram_icache_haddr      }),
+	.dst_hwrite      ({sdram_icache_hwrite      , sram_icache_hwrite     }),
+	.dst_htrans      ({sdram_icache_htrans      , sram_icache_htrans     }),
+	.dst_hsize       ({sdram_icache_hsize       , sram_icache_hsize      }),
+	.dst_hburst      ({sdram_icache_hburst      , sram_icache_hburst     }),
+	.dst_hprot       ({sdram_icache_hprot       , sram_icache_hprot      }),
+	.dst_hmastlock   ({sdram_icache_hmastlock   , sram_icache_hmastlock  }),
+	.dst_hwdata      ({sdram_icache_hwdata      , sram_icache_hwdata     }),
+	.dst_hrdata      ({sdram_icache_hrdata      , sram_icache_hrdata     })
 );
 
+ahbl_splitter #(
+	.N_PORTS   (3),
+	.W_ADDR    (W_HADDR),
+	.W_DATA    (W_HDATA),
+	.ADDR_MAP  ({     APB_BASE,    SDRAM_BASE,  BOOTRAM_BASE}),
+	.ADDR_MASK ({32'hf000_0000, 32'hf000_0000, 32'hf000_0000})
+) dcache_bus_splitter (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.src_hready      (dcache_hready    ),
+	.src_hready_resp (dcache_hready    ), // Tie HREADYOUT -> HREADY as this is top of fabric
+	.src_hresp       (dcache_hresp     ),
+	.src_haddr       (dcache_haddr     ),
+	.src_hwrite      (dcache_hwrite    ),
+	.src_htrans      (dcache_htrans    ),
+	.src_hsize       (dcache_hsize     ),
+	.src_hburst      (dcache_hburst    ),
+	.src_hprot       (dcache_hprot     ),
+	.src_hmastlock   (dcache_hmastlock ),
+	.src_hwdata      (dcache_hwdata    ),
+	.src_hrdata      (dcache_hrdata    ),
+
+	.dst_hready      ({bridge_hready      , sdram_dcache_hready      , sram_dcache_hready     }),
+	.dst_hready_resp ({bridge_hready_resp , sdram_dcache_hready_resp , sram_dcache_hready_resp}),
+	.dst_hresp       ({bridge_hresp       , sdram_dcache_hresp       , sram_dcache_hresp      }),
+	.dst_haddr       ({bridge_haddr       , sdram_dcache_haddr       , sram_dcache_haddr      }),
+	.dst_hwrite      ({bridge_hwrite      , sdram_dcache_hwrite      , sram_dcache_hwrite     }),
+	.dst_htrans      ({bridge_htrans      , sdram_dcache_htrans      , sram_dcache_htrans     }),
+	.dst_hsize       ({bridge_hsize       , sdram_dcache_hsize       , sram_dcache_hsize      }),
+	.dst_hburst      ({bridge_hburst      , sdram_dcache_hburst      , sram_dcache_hburst     }),
+	.dst_hprot       ({bridge_hprot       , sdram_dcache_hprot       , sram_dcache_hprot      }),
+	.dst_hmastlock   ({bridge_hmastlock   , sdram_dcache_hmastlock   , sram_dcache_hmastlock  }),
+	.dst_hwdata      ({bridge_hwdata      , sdram_dcache_hwdata      , sram_dcache_hwdata     }),
+	.dst_hrdata      ({bridge_hrdata      , sdram_dcache_hrdata      , sram_dcache_hrdata     })
+);
+
+ahbl_arbiter #(
+	.N_PORTS   (2),
+	.W_ADDR    (W_HADDR),
+	.W_DATA    (W_HDATA)
+) bootram_bus_arbiter (
+	.clk             (clk_sys),
+	.rst_n           (rst_n_sys),
+
+	.src_hready_resp ({sram_icache_hready_resp , sram_dcache_hready_resp }),
+	.src_hready      ({sram_icache_hready      , sram_dcache_hready      }),
+	.src_hresp       ({sram_icache_hresp       , sram_dcache_hresp       }),
+	.src_haddr       ({sram_icache_haddr       , sram_dcache_haddr       }),
+	.src_hwrite      ({sram_icache_hwrite      , sram_dcache_hwrite      }),
+	.src_htrans      ({sram_icache_htrans      , sram_dcache_htrans      }),
+	.src_hsize       ({sram_icache_hsize       , sram_dcache_hsize       }),
+	.src_hburst      ({sram_icache_hburst      , sram_dcache_hburst      }),
+	.src_hprot       ({sram_icache_hprot       , sram_dcache_hprot       }),
+	.src_hmastlock   ({sram_icache_hmastlock   , sram_dcache_hmastlock   }),
+	.src_hwdata      ({sram_icache_hwdata      , sram_dcache_hwdata      }),
+	.src_hrdata      ({sram_icache_hrdata      , sram_dcache_hrdata      }),
+
+	.dst_hready_resp (sram_hready_resp),
+	.dst_hready      (sram_hready     ),
+	.dst_hresp       (sram_hresp      ),
+	.dst_haddr       (sram_haddr      ),
+	.dst_hwrite      (sram_hwrite     ),
+	.dst_htrans      (sram_htrans     ),
+	.dst_hsize       (sram_hsize      ),
+	.dst_hburst      (sram_hburst     ),
+	.dst_hprot       (sram_hprot      ),
+	.dst_hmastlock   (sram_hmastlock  ),
+	.dst_hwdata      (sram_hwdata     ),
+	.dst_hrdata      (sram_hrdata     )
+);
 
 ahbl_to_apb #(
 	.W_HADDR (W_HADDR),
@@ -607,9 +678,9 @@ ahbl_to_apb #(
 apb_splitter #(
 	.W_ADDR    (W_PADDR),
 	.W_DATA    (W_HDATA),
-	.N_SLAVES  (7),
-	.ADDR_MAP  ({16'hf000 , 16'h5000 , 16'h4000 , 16'h3000 , 16'h2000 , 16'h1000 , 16'h0000}),
-	.ADDR_MASK ({16'hf000 , 16'hf000 , 16'hf000 , 16'hf000 , 16'hf000 , 16'hf000 , 16'hf000})
+	.N_SLAVES  (4),
+	.ADDR_MAP  ({16'hf000 , 16'h2000 , 16'h1000 , 16'h0000}),
+	.ADDR_MASK ({16'hf000 , 16'hf000 , 16'hf000 , 16'hf000})
 ) inst_apb_splitter (
 	.apbs_paddr   (bridge_paddr),
 	.apbs_psel    (bridge_psel),
@@ -620,14 +691,14 @@ apb_splitter #(
 	.apbs_prdata  (bridge_prdata),
 	.apbs_pslverr (bridge_pslverr),
 
-	.apbm_paddr   ({tbman_paddr   , bgen3_paddr   , bgen2_paddr   , bgen1_paddr   , bgen0_paddr   , sdram_paddr   , uart_paddr  }),
-	.apbm_psel    ({tbman_psel    , bgen3_psel    , bgen2_psel    , bgen1_psel    , bgen0_psel    , sdram_psel    , uart_psel   }),
-	.apbm_penable ({tbman_penable , bgen3_penable , bgen2_penable , bgen1_penable , bgen0_penable , sdram_penable , uart_penable}),
-	.apbm_pwrite  ({tbman_pwrite  , bgen3_pwrite  , bgen2_pwrite  , bgen1_pwrite  , bgen0_pwrite  , sdram_pwrite  , uart_pwrite }),
-	.apbm_pwdata  ({tbman_pwdata  , bgen3_pwdata  , bgen2_pwdata  , bgen1_pwdata  , bgen0_pwdata  , sdram_pwdata  , uart_pwdata }),
-	.apbm_pready  ({tbman_pready  , bgen3_pready  , bgen2_pready  , bgen1_pready  , bgen0_pready  , sdram_pready  , uart_pready }),
-	.apbm_prdata  ({tbman_prdata  , bgen3_prdata  , bgen2_prdata  , bgen1_prdata  , bgen0_prdata  , sdram_prdata  , uart_prdata }),
-	.apbm_pslverr ({tbman_pslverr , bgen3_pslverr , bgen2_pslverr , bgen1_pslverr , bgen0_pslverr , sdram_pslverr , uart_pslverr})
+	.apbm_paddr   ({tbman_paddr   , bgen0_paddr   , sdram_paddr   , uart_paddr  }),
+	.apbm_psel    ({tbman_psel    , bgen0_psel    , sdram_psel    , uart_psel   }),
+	.apbm_penable ({tbman_penable , bgen0_penable , sdram_penable , uart_penable}),
+	.apbm_pwrite  ({tbman_pwrite  , bgen0_pwrite  , sdram_pwrite  , uart_pwrite }),
+	.apbm_pwdata  ({tbman_pwdata  , bgen0_pwdata  , sdram_pwdata  , uart_pwdata }),
+	.apbm_pready  ({tbman_pready  , bgen0_pready  , sdram_pready  , uart_pready }),
+	.apbm_prdata  ({tbman_prdata  , bgen0_prdata  , sdram_prdata  , uart_prdata }),
+	.apbm_pslverr ({tbman_pslverr , bgen0_pslverr , sdram_pslverr , uart_pslverr})
 );
 
 
@@ -662,7 +733,7 @@ ahbl_sdram #(
 	.W_SDRAM_BANKSEL    (2),
 	.W_SDRAM_ADDR       (13),
 	.W_SDRAM_DATA       (16),
-	.N_MASTERS          (1), // (4),
+	.N_MASTERS          (3),
 	.LEN_AHBL_BURST     (4),
 
 	.FIXED_TIMINGS      (1), // 1: use fixed values, 0: allow programming via APB.
@@ -698,19 +769,19 @@ ahbl_sdram #(
 	.apbs_prdata       (sdram_prdata),
 	.apbs_pready       (sdram_pready),
 	.apbs_pslverr      (sdram_pslverr),
-
-	.ahbls_hready      ({/*bgen3_hready    , bgen2_hready    , bgen1_hready    , */ bgen0_hready    }),
-	.ahbls_hready_resp ({/*bgen3_hready    , bgen2_hready    , bgen1_hready    , */ bgen0_hready    }),
-	.ahbls_hresp       ({/*bgen3_hresp     , bgen2_hresp     , bgen1_hresp     , */ bgen0_hresp     }),
-	.ahbls_haddr       ({/*bgen3_haddr     , bgen2_haddr     , bgen1_haddr     , */ bgen0_haddr     }),
-	.ahbls_hwrite      ({/*bgen3_hwrite    , bgen2_hwrite    , bgen1_hwrite    , */ bgen0_hwrite    }),
-	.ahbls_htrans      ({/*bgen3_htrans    , bgen2_htrans    , bgen1_htrans    , */ bgen0_htrans    }),
-	.ahbls_hsize       ({/*bgen3_hsize     , bgen2_hsize     , bgen1_hsize     , */ bgen0_hsize     }),
-	.ahbls_hburst      ({/*bgen3_hburst    , bgen2_hburst    , bgen1_hburst    , */ bgen0_hburst    }),
-	.ahbls_hprot       ({/*bgen3_hprot     , bgen2_hprot     , bgen1_hprot     , */ bgen0_hprot     }),
-	.ahbls_hmastlock   ({/*bgen3_hmastlock , bgen2_hmastlock , bgen1_hmastlock , */ bgen0_hmastlock }),
-	.ahbls_hwdata      ({/*bgen3_hwdata    , bgen2_hwdata    , bgen1_hwdata    , */ bgen0_hwdata    }),
-	.ahbls_hrdata      ({/*bgen3_hrdata    , bgen2_hrdata    , bgen1_hrdata    , */ bgen0_hrdata    })
+	                   // -> ascending priority
+	.ahbls_hready      ({ sdram_icache_hready      ,  sdram_dcache_hready      ,  sdram_video_hready                 }),
+	.ahbls_hready_resp ({ sdram_icache_hready_resp ,  sdram_dcache_hready_resp ,  sdram_video_hready_resp            }),
+	.ahbls_hresp       ({ sdram_icache_hresp       ,  sdram_dcache_hresp       ,  sdram_video_hresp                  }),
+	.ahbls_haddr       ({ sdram_icache_haddr       ,  sdram_dcache_haddr       ,  sdram_video_haddr                  }),
+	.ahbls_hwrite      ({ sdram_icache_hwrite      ,  sdram_dcache_hwrite      ,  sdram_video_hwrite                 }),
+	.ahbls_htrans      ({ sdram_icache_htrans      ,  sdram_dcache_htrans      ,  sdram_video_htrans                 }),
+	.ahbls_hsize       ({ sdram_icache_hsize       ,  sdram_dcache_hsize       ,  sdram_video_hsize                  }),
+	.ahbls_hburst      ({ sdram_icache_hburst      ,  sdram_dcache_hburst      ,  sdram_video_hburst                 }),
+	.ahbls_hprot       ({ sdram_icache_hprot       ,  sdram_dcache_hprot       ,  sdram_video_hprot                  }),
+	.ahbls_hmastlock   ({ sdram_icache_hmastlock   ,  sdram_dcache_hmastlock   ,  sdram_video_hmastlock              }),
+	.ahbls_hwdata      ({ sdram_icache_hwdata      ,  sdram_dcache_hwdata      ,  sdram_video_hwdata                 }),
+	.ahbls_hrdata      ({ sdram_icache_hrdata      ,  sdram_dcache_hrdata      ,  sdram_video_hrdata                 })
 );
 
 
@@ -768,105 +839,18 @@ apb_burst_gen #(
 	.apbs_pready     (bgen0_pready),
 	.apbs_pslverr    (bgen0_pslverr),
 
-	.ahblm_haddr     (bgen0_haddr),
-	.ahblm_hwrite    (bgen0_hwrite),
-	.ahblm_htrans    (bgen0_htrans),
-	.ahblm_hsize     (bgen0_hsize),
-	.ahblm_hburst    (bgen0_hburst),
-	.ahblm_hprot     (bgen0_hprot),
-	.ahblm_hmastlock (bgen0_hmastlock),
-	.ahblm_hready    (bgen0_hready),
-	.ahblm_hresp     (bgen0_hresp),
-	.ahblm_hwdata    (bgen0_hwdata),
-	.ahblm_hrdata    (bgen0_hrdata)
+	.ahblm_haddr     (sdram_video_haddr),
+	.ahblm_hwrite    (sdram_video_hwrite),
+	.ahblm_htrans    (sdram_video_htrans),
+	.ahblm_hsize     (sdram_video_hsize),
+	.ahblm_hburst    (sdram_video_hburst),
+	.ahblm_hprot     (sdram_video_hprot),
+	.ahblm_hmastlock (sdram_video_hmastlock),
+	.ahblm_hready    (sdram_video_hready),
+	.ahblm_hresp     (sdram_video_hresp),
+	.ahblm_hwdata    (sdram_video_hwdata),
+	.ahblm_hrdata    (sdram_video_hrdata)
 );
-
-apb_burst_gen #(
-	.W_ADDR(W_HADDR),
-	.W_DATA(W_HDATA)
-) bgen1 (
-	.clk             (clk_sys),
-	.rst_n           (rst_n_sys),
-
-	.apbs_psel       (bgen1_psel),
-	.apbs_penable    (bgen1_penable),
-	.apbs_pwrite     (bgen1_pwrite),
-	.apbs_paddr      (bgen1_paddr),
-	.apbs_pwdata     (bgen1_pwdata),
-	.apbs_prdata     (bgen1_prdata),
-	.apbs_pready     (bgen1_pready),
-	.apbs_pslverr    (bgen1_pslverr),
-
-	.ahblm_haddr     (bgen1_haddr),
-	.ahblm_hwrite    (bgen1_hwrite),
-	.ahblm_htrans    (bgen1_htrans),
-	.ahblm_hsize     (bgen1_hsize),
-	.ahblm_hburst    (bgen1_hburst),
-	.ahblm_hprot     (bgen1_hprot),
-	.ahblm_hmastlock (bgen1_hmastlock),
-	.ahblm_hready    (bgen1_hready),
-	.ahblm_hresp     (bgen1_hresp),
-	.ahblm_hwdata    (bgen1_hwdata),
-	.ahblm_hrdata    (bgen1_hrdata)
-);
-
-apb_burst_gen #(
-	.W_ADDR(W_HADDR),
-	.W_DATA(W_HDATA)
-) bgen2 (
-	.clk             (clk_sys),
-	.rst_n           (rst_n_sys),
-
-	.apbs_psel       (bgen2_psel),
-	.apbs_penable    (bgen2_penable),
-	.apbs_pwrite     (bgen2_pwrite),
-	.apbs_paddr      (bgen2_paddr),
-	.apbs_pwdata     (bgen2_pwdata),
-	.apbs_prdata     (bgen2_prdata),
-	.apbs_pready     (bgen2_pready),
-	.apbs_pslverr    (bgen2_pslverr),
-
-	.ahblm_haddr     (bgen2_haddr),
-	.ahblm_hwrite    (bgen2_hwrite),
-	.ahblm_htrans    (bgen2_htrans),
-	.ahblm_hsize     (bgen2_hsize),
-	.ahblm_hburst    (bgen2_hburst),
-	.ahblm_hprot     (bgen2_hprot),
-	.ahblm_hmastlock (bgen2_hmastlock),
-	.ahblm_hready    (bgen2_hready),
-	.ahblm_hresp     (bgen2_hresp),
-	.ahblm_hwdata    (bgen2_hwdata),
-	.ahblm_hrdata    (bgen2_hrdata)
-);
-
-apb_burst_gen #(
-	.W_ADDR(W_HADDR),
-	.W_DATA(W_HDATA)
-) bgen3 (
-	.clk             (clk_sys),
-	.rst_n           (rst_n_sys),
-
-	.apbs_psel       (bgen3_psel),
-	.apbs_penable    (bgen3_penable),
-	.apbs_pwrite     (bgen3_pwrite),
-	.apbs_paddr      (bgen3_paddr),
-	.apbs_pwdata     (bgen3_pwdata),
-	.apbs_prdata     (bgen3_prdata),
-	.apbs_pready     (bgen3_pready),
-	.apbs_pslverr    (bgen3_pslverr),
-
-	.ahblm_haddr     (bgen3_haddr),
-	.ahblm_hwrite    (bgen3_hwrite),
-	.ahblm_htrans    (bgen3_htrans),
-	.ahblm_hsize     (bgen3_hsize),
-	.ahblm_hburst    (bgen3_hburst),
-	.ahblm_hprot     (bgen3_hprot),
-	.ahblm_hmastlock (bgen3_hmastlock),
-	.ahblm_hready    (bgen3_hready),
-	.ahblm_hresp     (bgen3_hresp),
-	.ahblm_hwdata    (bgen3_hwdata),
-	.ahblm_hrdata    (bgen3_hrdata)
-);
-
+assign sdram_video_hready = sdram_video_hready_resp;
 
 endmodule
