@@ -11,6 +11,7 @@
 #define UART_BASE       (APB_BASE + 0x0000)
 #define SDRAM_CTRL_BASE (APB_BASE + 0x1000)
 #define BGEN_BASE       (APB_BASE + 0x2000)
+#define AUDIO_OUT_BASE  (APB_BASE + 0x3000)
 #define TBMAN_BASE      (APB_BASE + 0xf000)
 
 #ifndef __ASSEMBLER__

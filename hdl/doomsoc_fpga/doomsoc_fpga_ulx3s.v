@@ -39,6 +39,9 @@ module doomsoc_fpga (
 	output wire        sdram_cas_n,
 	output wire        sdram_we_n,
 
+	output wire [3:0]  audio_l,
+	output wire [3:0]  audio_r,
+
 	// Reset button loopback
 	input  wire        btn_pwr_n,
 	output wire        user_programn,
@@ -101,6 +104,9 @@ doomsoc_core #(
 
 	.dvip        (gpdi_dp),
 	.dvin        (gpdi_dn),
+
+	.audio_out_l (audio_l),
+	.audio_out_r (audio_r),
 
 	.uart_tx     (uart_tx),
 	.uart_rx     (uart_rx)

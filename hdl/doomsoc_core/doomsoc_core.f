@@ -3,6 +3,7 @@ file doomsoc_core.v
 list $HDL/hazard5/hdl/hazard5.f
 list $HDL/peris/tbman/tbman.f
 list $HDL/peris/apb_burst_gen/apb_burst_gen.f
+list $HDL/peris/pcm_audio_out/pcm_audio_out.f
 list $HDL/sdram/ahbl_sdram.f
 
 file $LIBFPGA/common/reset_sync.v

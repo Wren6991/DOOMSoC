@@ -1,0 +1,30 @@
+name: audio_out
+bus: apb
+addr: 16
+data: 32
+regs:
+    - name: csr
+      info: Control and status register
+      bits:
+        - {b: 0,  name: en, access: rw, info: Enable audio output}
+        - {b: 1,  name: fmt_signed, access: rw,
+        info: "If 1, samples are interpreted as signed integers."}
+        - {b: 2,  name: fmt_16, access: rw,
+          info: "If 1, samples are 16-bit. If 0, 8-bit. Samples are always packed into a 32-bit FIFO word."}
+        - {b: 3,  name: fmt_mono, access: rw,
+          info: "If 1, the same sample is sent to both output channels. If 0, a different output sample to each channel. Samples are always consumed least-significant-first from the FIFO word, and the left channel is less significant than the right channel."}
+        - {b: 8, name: ie, access: rw,
+          info: "Interrupt enable for half-full interrupt"}
+        - {b: 29, name: empty, access: rov, info: Sample FIFO is empty}
+        - {b: 30, name: full, access: rov, info: Sample FIFO is full}
+        - {b: 31, name: half_full, access: rov,
+          info: "FIFO is no more than half full. This is the sign bit, so is fast to check."}
+    - name: div
+      info: "Divider for oversampling clock. The fractional division is just first-order, so use integer multiples if you can."
+      bits:
+        - {b: [7, 0], name: frac, access: rw}
+        - {b: [17, 8], name: int, access: rw}
+    - name: fifo
+      info: Write access for sample FIFO
+      bits:
+        - {b: [31, 0], access: wf}

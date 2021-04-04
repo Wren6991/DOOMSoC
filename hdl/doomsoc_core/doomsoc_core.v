@@ -24,7 +24,8 @@ module doomsoc_core #(
 	parameter BOOTRAM_PRELOAD = "",
 	parameter W_SDRAM_BANKSEL = 2,
 	parameter W_SDRAM_ADDR = 13,
-	parameter W_SDRAM_DATA = 16
+	parameter W_SDRAM_DATA = 16,
+	parameter W_AUDIO_OUT = 4
 ) (
 	// Clock and reset
 	input  wire                       clk_sys,
@@ -47,6 +48,10 @@ module doomsoc_core #(
 	// DVI video out
 	output wire [3:0]                 dvip,
 	output wire [3:0]                 dvin,
+
+	// Parallel audio out (e.g. resistor DAC or 1-bit RC)
+	output wire [W_AUDIO_OUT-1:0]     audio_out_l,
+	output wire [W_AUDIO_OUT-1:0]     audio_out_r,
 
 	// GPIO and serial peripherals
 	output wire                       uart_tx,
@@ -267,6 +272,17 @@ wire               uart_pslverr;
 
 wire               uart_irq;
 
+wire [W_PADDR-1:0] audio_paddr;
+wire               audio_psel;
+wire               audio_penable;
+wire               audio_pwrite;
+wire [W_HDATA-1:0] audio_pwdata;
+wire               audio_pready;
+wire [W_HDATA-1:0] audio_prdata;
+wire               audio_pslverr;
+
+wire               audio_irq;
+
 wire [W_PADDR-1:0] sdram_paddr;
 wire               sdram_psel;
 wire               sdram_penable;
@@ -341,7 +357,8 @@ hazard5_cpu_2port #(
 	.d_hrdata    (proc_d_hrdata),
 
 	.irq             ({
-		15'h0,
+		14'h0,
+		audio_irq,
 		uart_irq
 	})
 );
@@ -678,9 +695,9 @@ ahbl_to_apb #(
 apb_splitter #(
 	.W_ADDR    (W_PADDR),
 	.W_DATA    (W_HDATA),
-	.N_SLAVES  (4),
-	.ADDR_MAP  ({16'hf000 , 16'h2000 , 16'h1000 , 16'h0000}),
-	.ADDR_MASK ({16'hf000 , 16'hf000 , 16'hf000 , 16'hf000})
+	.N_SLAVES  (5),
+	.ADDR_MAP  ({16'hf000 , 16'h3000 , 16'h2000 , 16'h1000 , 16'h0000}),
+	.ADDR_MASK ({16'hf000 , 16'hf000 , 16'hf000 , 16'hf000 , 16'hf000})
 ) inst_apb_splitter (
 	.apbs_paddr   (bridge_paddr),
 	.apbs_psel    (bridge_psel),
@@ -691,14 +708,14 @@ apb_splitter #(
 	.apbs_prdata  (bridge_prdata),
 	.apbs_pslverr (bridge_pslverr),
 
-	.apbm_paddr   ({tbman_paddr   , bgen0_paddr   , sdram_paddr   , uart_paddr  }),
-	.apbm_psel    ({tbman_psel    , bgen0_psel    , sdram_psel    , uart_psel   }),
-	.apbm_penable ({tbman_penable , bgen0_penable , sdram_penable , uart_penable}),
-	.apbm_pwrite  ({tbman_pwrite  , bgen0_pwrite  , sdram_pwrite  , uart_pwrite }),
-	.apbm_pwdata  ({tbman_pwdata  , bgen0_pwdata  , sdram_pwdata  , uart_pwdata }),
-	.apbm_pready  ({tbman_pready  , bgen0_pready  , sdram_pready  , uart_pready }),
-	.apbm_prdata  ({tbman_prdata  , bgen0_prdata  , sdram_prdata  , uart_prdata }),
-	.apbm_pslverr ({tbman_pslverr , bgen0_pslverr , sdram_pslverr , uart_pslverr})
+	.apbm_paddr   ({tbman_paddr   , audio_paddr   , bgen0_paddr   , sdram_paddr   , uart_paddr  }),
+	.apbm_psel    ({tbman_psel    , audio_psel    , bgen0_psel    , sdram_psel    , uart_psel   }),
+	.apbm_penable ({tbman_penable , audio_penable , bgen0_penable , sdram_penable , uart_penable}),
+	.apbm_pwrite  ({tbman_pwrite  , audio_pwrite  , bgen0_pwrite  , sdram_pwrite  , uart_pwrite }),
+	.apbm_pwdata  ({tbman_pwdata  , audio_pwdata  , bgen0_pwdata  , sdram_pwdata  , uart_pwdata }),
+	.apbm_pready  ({tbman_pready  , audio_pready  , bgen0_pready  , sdram_pready  , uart_pready }),
+	.apbm_prdata  ({tbman_prdata  , audio_prdata  , bgen0_prdata  , sdram_prdata  , uart_prdata }),
+	.apbm_pslverr ({tbman_pslverr , audio_pslverr , bgen0_pslverr , sdram_pslverr , uart_pslverr})
 );
 
 
@@ -807,6 +824,29 @@ uart_mini #(
 	.rts          (/* unused */),
 	.irq          (uart_irq),
 	.dreq         (/* unused */)
+);
+
+pcm_audio_out #(
+	.W_OUT          (W_AUDIO_OUT),
+	.LOG_OVERSAMPLE (4),
+	.FIFO_DEPTH     (64)
+) pcm0 (
+	.clk          (clk_sys),
+	.rst_n        (rst_n_sys),
+
+	.apbs_psel    (audio_psel),
+	.apbs_penable (audio_penable),
+	.apbs_pwrite  (audio_pwrite),
+	.apbs_paddr   (audio_paddr),
+	.apbs_pwdata  (audio_pwdata),
+	.apbs_prdata  (audio_prdata),
+	.apbs_pready  (audio_pready),
+	.apbs_pslverr (audio_pslverr),
+
+	.out_l        (audio_out_l),
+	.out_r        (audio_out_r),
+
+	.irq          (audio_irq)
 );
 
 tbman inst_tbman (

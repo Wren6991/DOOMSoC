@@ -1,3 +1,6 @@
+#ifndef _SDRAM_H
+#define _SDRAM_H
+
 #include "platform_defs.h"
 #include "hw/sdram_ctrl_regs.h"
 #include "delay.h"
@@ -57,3 +60,5 @@ static inline void sdram_init_seq() {
 	// configured, we can enable the controller
 	mm_sdram_ctrl->csr |= SDRAM_CSR_EN_MASK;
 }
+
+#endif

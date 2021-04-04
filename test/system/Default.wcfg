@@ -9,7 +9,7 @@
          </top_modules>
       </db_ref>
    </db_ref_list>
-   <WVObjectSize size="15" />
+   <WVObjectSize size="11" />
    <wvobject fp_name="group116" type="group">
       <obj_property name="label">Proc I Port</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -152,27 +152,6 @@
          <obj_property name="ObjectShortName">d_hrdata[31:0]</obj_property>
          <obj_property name="Radix">HEXRADIX</obj_property>
       </wvobject>
-   </wvobject>
-   <wvobject fp_name="/tb/inst_doomsoc_core/dcache/cache_ren" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">cache_ren</obj_property>
-      <obj_property name="ObjectShortName">cache_ren</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb/inst_doomsoc_core/dcache/cache_hit" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">cache_hit</obj_property>
-      <obj_property name="ObjectShortName">cache_hit</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb/inst_doomsoc_core/dcache/cache_dirty" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">cache_dirty</obj_property>
-      <obj_property name="ObjectShortName">cache_dirty</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb/inst_doomsoc_core/dcache/cache_state" type="array" db_ref_id="1">
-      <obj_property name="ElementShortName">cache_state[4:0]</obj_property>
-      <obj_property name="ObjectShortName">cache_state[4:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb/inst_doomsoc_core/dcache_hresp" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">dcache_hresp</obj_property>
-      <obj_property name="ObjectShortName">dcache_hresp</obj_property>
    </wvobject>
    <wvobject fp_name="group112" type="group">
       <obj_property name="label">DCache Downstream</obj_property>
@@ -553,6 +532,125 @@
          <obj_property name="ElementShortName">sram_hrdata[31:0]</obj_property>
          <obj_property name="ObjectShortName">sram_hrdata[31:0]</obj_property>
          <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group126" type="group">
+      <obj_property name="label">Audio</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb/inst_doomsoc_core/audio_out_l" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">audio_out_l[3:0]</obj_property>
+         <obj_property name="ObjectShortName">audio_out_l[3:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb/inst_doomsoc_core/audio_out_r" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">audio_out_r[3:0]</obj_property>
+         <obj_property name="ObjectShortName">audio_out_r[3:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="group133" type="group">
+         <obj_property name="label">Bus</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/apbs_psel" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">apbs_psel</obj_property>
+            <obj_property name="ObjectShortName">apbs_psel</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/apbs_penable" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">apbs_penable</obj_property>
+            <obj_property name="ObjectShortName">apbs_penable</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/apbs_paddr" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">apbs_paddr[15:0]</obj_property>
+            <obj_property name="ObjectShortName">apbs_paddr[15:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/apbs_pwrite" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">apbs_pwrite</obj_property>
+            <obj_property name="ObjectShortName">apbs_pwrite</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/apbs_pwdata" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">apbs_pwdata[31:0]</obj_property>
+            <obj_property name="ObjectShortName">apbs_pwdata[31:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/apbs_prdata" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">apbs_prdata[31:0]</obj_property>
+            <obj_property name="ObjectShortName">apbs_prdata[31:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group139" type="group">
+         <obj_property name="label">FIFO</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/fifo_wen" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">fifo_wen</obj_property>
+            <obj_property name="ObjectShortName">fifo_wen</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/fifo_wdata" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">fifo_wdata[31:0]</obj_property>
+            <obj_property name="ObjectShortName">fifo_wdata[31:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/fifo_ren" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">fifo_ren</obj_property>
+            <obj_property name="ObjectShortName">fifo_ren</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/fifo_rdata" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">fifo_rdata[31:0]</obj_property>
+            <obj_property name="ObjectShortName">fifo_rdata[31:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/fifo_level" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">fifo_level[6:0]</obj_property>
+            <obj_property name="ObjectShortName">fifo_level[6:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group157" type="group">
+         <obj_property name="label">DAC L</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/clk_en" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">clk_en</obj_property>
+            <obj_property name="ObjectShortName">clk_en</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/oversample_ctr" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">oversample_ctr[4:0]</obj_property>
+            <obj_property name="ObjectShortName">oversample_ctr[4:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/sample_in" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">sample_in[15:0]</obj_property>
+            <obj_property name="ObjectShortName">sample_in[15:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/sample_in_scaled" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">sample_in_scaled[19:0]</obj_property>
+            <obj_property name="ObjectShortName">sample_in_scaled[19:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/sample_in_prev_scaled" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">sample_in_prev_scaled[19:0]</obj_property>
+            <obj_property name="ObjectShortName">sample_in_prev_scaled[19:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/sample_in_rdy" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">sample_in_rdy</obj_property>
+            <obj_property name="ObjectShortName">sample_in_rdy</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/sample_out" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">sample_out[3:0]</obj_property>
+            <obj_property name="ObjectShortName">sample_out[3:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/interp_sample" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">interp_sample[24:0]</obj_property>
+            <obj_property name="ObjectShortName">interp_sample[24:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/pcm0/dac_l/accum" type="array" db_ref_id="1">
+            <obj_property name="ElementShortName">accum[20:0]</obj_property>
+            <obj_property name="ObjectShortName">accum[20:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
       </wvobject>
    </wvobject>
 </wave_config>
