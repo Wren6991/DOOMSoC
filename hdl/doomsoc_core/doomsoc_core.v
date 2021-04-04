@@ -789,7 +789,7 @@ ahbl_sdram #(
 // Peripherals
 
 uart_mini #(
-	.FIFO_DEPTH (4)
+	.FIFO_DEPTH (8)
 ) uart0 (
 	.clk          (clk_sys),
 	.rst_n        (rst_n_sys),

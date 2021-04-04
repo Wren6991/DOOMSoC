@@ -8,7 +8,7 @@
 #endif
 
 #ifndef UART_BAUD
-#define UART_BAUD (1 * 1000 * 1000)
+#define UART_BAUD (3 * 1000 * 1000)
 #endif
 
 #ifndef PRINTF_BUF_SIZE
