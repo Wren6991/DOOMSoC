@@ -50,7 +50,7 @@ static inline void audio_out_set_clkdiv(uint32_t div) {
 }
 
 // Use a constant argument
-#define audio_out_set_sample_freq(freq) audio_out_set_clkdiv((uint32_t)(CLK_SYS_MHZ * 1000.0 * 1000.0) / \
-	(AUDIO_OUT_OVERSAMPLE_RATE * (1 << AUDIO_OUT_DIV_INT_LSB) * freq))
+#define audio_out_set_sample_freq(freq) audio_out_set_clkdiv((uint32_t)((CLK_SYS_MHZ * 1e6 * (1 << AUDIO_OUT_DIV_INT_LSB)) / \
+	(AUDIO_OUT_OVERSAMPLE_RATE * freq)))
 
 #endif

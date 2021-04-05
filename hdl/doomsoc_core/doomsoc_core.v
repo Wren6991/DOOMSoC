@@ -66,8 +66,8 @@ localparam BOOTRAM_BASE = 32'h0000_0000;
 localparam SDRAM_BASE   = 32'h2000_0000;
 localparam APB_BASE     = 32'h4000_0000;
 
-localparam ICACHE_SIZE_BYTES = 2 * 1024;
-localparam DCACHE_SIZE_BYTES = 2 * 1024;
+localparam ICACHE_SIZE_BYTES = 4 * 1024;
+localparam DCACHE_SIZE_BYTES = 4 * 1024;
 localparam W_CACHE_LINE = 4 * W_HDATA;
 
 // ----------------------------------------------------------------------------

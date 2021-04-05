@@ -6,12 +6,9 @@
 #include <stdbool.h>
 
 #include "console.h"
+#include "crc.h"
 #include "delay.h"
 #include "sdram.h"
-
-#define BOOT2_LOAD_SIZE 65536
-#define CACHE_SIZE_WORDS 512
-#define CACHE_LINE_SIZE_WORDS 4
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -64,7 +61,7 @@ static inline uint32_t urand(uint32_t *state) {
 }
 
 bool test_mem_range(uint32_t start, uint32_t stop, uint32_t stride, uint32_t rand_seed) {
-	console_puts("Write random u32 ");
+	console_puts("Write u32 ");
 	console_putint(start);
 	console_puts(" -> ");
 	console_putint(stop);
@@ -79,7 +76,7 @@ bool test_mem_range(uint32_t start, uint32_t stop, uint32_t stride, uint32_t ran
 	for (uint32_t addr = start; addr < stop; addr += stride)
 		sdram_words[addr] = urand(&urand_state);
 
-	console_puts("Done. Reading back...");
+	console_puts("Done. Read...");
 
 	urand_state = rand_seed;
 	bool mismatch = false;
@@ -100,6 +97,13 @@ bool test_mem_range(uint32_t start, uint32_t stop, uint32_t stride, uint32_t ran
 	if (!mismatch)
 		console_puts(" OK.\n");
 	return !mismatch;
+}
+
+static inline uint32_t get_u32() {
+	uint32_t accum = 0;
+	for (int i = 0; i < 4; ++i)
+		accum = (accum >> 8) | ((uint32_t)console_getc() << 24);
+	return accum;
 }
 
 int main() {
@@ -135,10 +139,28 @@ int main() {
 		console_puts("Skipping SDRAM load in simulation.\n");
 	}
 	else {
-		console_puts("Loading " xstr(BOOT2_LOAD_SIZE) " bytes to SDRAM.\n<<<IMG<<<");
-		for (int i = 0; i < BOOT2_LOAD_SIZE; ++i)
-			((volatile uint8_t*)SDRAM_BASE)[i] = (uint8_t)console_getc();
-		console_puts("\nLoad OK. Cache flush...\n");
+		console_puts("<<<IMG<<<\n");
+		uint32_t len = get_u32();
+		uint32_t checksum_expect = get_u32();
+		uint32_t checksum_accum = 0xffffffffu;
+		for (uint32_t i = 0; i < len; ++i) {
+			uint8_t rx = (uint8_t)console_getc();
+			checksum_accum = crc_checksum_byte(CRC_POLY_CRC32, checksum_accum, rx);
+			sdram_bytes[i] = rx;
+		}
+		checksum_accum = ~crc_bitrev_u32(checksum_accum);
+		console_puts("Received ");
+		console_putint(len);
+		console_puts(" bytes.\nExpected CRC32: ");
+		console_putint(checksum_expect);
+		console_puts(", actual: ");
+		console_putint(checksum_accum);
+		console_puts("\n");
+		if (checksum_expect != checksum_accum) {
+			console_puts("Bad CRC32.\n");
+			_exit(-1);
+		}
+		console_puts("Cache flush...\n");
 		for (int i = 0; i < CACHE_SIZE_WORDS * 2; ++i)
 			(void)((volatile uint32_t*)SDRAM_BASE)[i];
 #if 0
