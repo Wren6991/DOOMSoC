@@ -829,7 +829,7 @@ uart_mini #(
 pcm_audio_out #(
 	.W_OUT          (W_AUDIO_OUT),
 	.LOG_OVERSAMPLE (4),
-	.FIFO_DEPTH     (64)
+	.LOG_FIFO_DEPTH (6)
 ) pcm0 (
 	.clk          (clk_sys),
 	.rst_n        (rst_n_sys),

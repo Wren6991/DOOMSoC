@@ -28,7 +28,7 @@
 module pcm_audio_out #(
 	parameter W_OUT          = 4,
 	parameter LOG_OVERSAMPLE = 5,
-	parameter FIFO_DEPTH     = 64
+	parameter LOG_FIFO_DEPTH = 6
 ) (
 	input  wire             clk,
 	input  wire             rst_n,
@@ -95,32 +95,39 @@ audio_out_regs regs (
 // ----------------------------------------------------------------------------
 // FIFO and flags
 
-parameter W_FIFO_LEVEL = $clog2(FIFO_DEPTH + 1);
-
 wire [31:0]             fifo_rdata;
 wire                    fifo_ren;
-wire                    fifo_full;
-wire                    fifo_empty;
-wire [W_FIFO_LEVEL-1:0] fifo_level;
+wire                    fifo_wfull;
+wire                    fifo_wempty;
+wire [LOG_FIFO_DEPTH:0] fifo_wlevel;
 
-sync_fifo #(
-	.DEPTH(FIFO_DEPTH),
-	.WIDTH(32)
-) inst_sync_fifo (
-	.clk    (clk),
-	.rst_n  (rst_n),
-	.w_data (fifo_wdata),
-	.w_en   (fifo_wen),
-	.r_data (fifo_rdata),
-	.r_en   (fifo_ren),
-	.full   (fifo_full),
-	.empty  (fifo_empty),
-	.level  (fifo_level)
+// Using async FIFO instead of sync because it supports block mem inference,
+// sync FIFO is optimised for low area at low depth. Will probably need to
+// move to async audio clock at some point anyway.
+async_fifo #(
+	.W_DATA (32),
+	.W_ADDR (LOG_FIFO_DEPTH)
+) sample_fifo (
+	.wclk   (clk),
+	.wrst_n (rst_n),
+	.wdata  (fifo_wdata),
+	.wpush  (fifo_wen),
+	.wfull  (fifo_wfull),
+	.wempty (fifo_wempty),
+	.wlevel (fifo_wlevel),
+
+	.rclk   (clk),
+	.rrst_n (rst_n),
+	.rdata  (fifo_rdata),
+	.rpop   (fifo_ren),
+	.rempty (/* unused */),
+	.rfull  (/* unused */),
+	.rlevel (/* unused */)
 );
 
-assign csr_full = fifo_full;
-assign csr_empty = fifo_empty;
-assign csr_half_full = fifo_level <= FIFO_DEPTH / 2;
+assign csr_full = fifo_wfull;
+assign csr_empty = fifo_wempty;
+assign csr_half_full = fifo_wlevel <= (1 << LOG_FIFO_DEPTH) / 2;
 
 always @ (posedge clk or negedge rst_n)
 	if (!rst_n)
