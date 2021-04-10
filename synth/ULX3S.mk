@@ -4,7 +4,7 @@ DOTF=$(HDL)/doomsoc_fpga/doomsoc_fpga_ulx3s.f
 BOOTAPP=bootloader
 
 SYNTH_OPT=-abc9
-PNR_OPT=--timing-allow-fail
+PNR_OPT=--timing-allow-fail --pre-pack $(CHIPNAME)_prepack.py
 
 DEVICE=um5g-85k
 PACKAGE=CABGA381

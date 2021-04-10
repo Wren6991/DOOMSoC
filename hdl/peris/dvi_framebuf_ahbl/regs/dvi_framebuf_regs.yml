@@ -1,0 +1,74 @@
+name: dvi_framebuf
+bus: apb
+addr: 16
+data: 32
+info: |
+  Controls for displaying a RAM-resident framebuffer, or synchronously-swapped
+  set of framebuffers, on a DVI link. The DVI display resolution is fixed, but
+  this hardware supports doubling/quadrupling of framebuffer pixels to achieve
+  lower resolution and lower video bandwidth than is required for
+  full-resolution video.
+regs:
+    - name: csr
+      info: Control and status register
+      bits:
+        - {b: 0,  name: en, access: rw, info: "
+            If 1, enable both DVI output and pixel DMA. The DMA immediately
+            starts filling the pixel FIFO with the first n pixels. The DVI
+            output starts from the beginning of the vertical blanking period,
+            ensuring ample time for the first pixel fetch. The first VIRQ is
+            generated at the end of the first frame, once the DMA has fetched
+            the last pixels.
+          "}
+        - {b: 1,  name: virq, access: w1c, info: "
+            Vertical interrupt flag. VIRQ is triggered after the pixel DMA
+            fetches the last pixels of a frame, which is slightly before those
+            pixels actually appear on the DVI link. The VIRQ is acknowledged
+            (cleared) by writing 1 to this field.          "}
+        - {b: 2,  name: virqe, access: rw, info: "
+            Vertical interrupt enable. External interrupt request is asserted
+            whenever VIRQ and VIRQE are both 1.
+          "}
+        - {b: 3,  name: virq_pauses_dma, access: rw, info: "
+            If 1, pause pixel DMA whenever VIRQ is high, indicating a vertical
+            interrupt that has not yet been acknowledged. This allows a
+            vertical IRQ to update the FRAMEBUF pointer synchronously.
+          "}
+        - {b: 8,  name: underflow, access: w1c, info: "
+            Pixel FIFO underflow occurred. There is nothing you can do about
+            it, just turn the display off and on again.
+          "}
+        - {b: [17, 16], name: log_pix_repeat, access: rw, info: "
+            Repeat each pixel 1 << n times horizontally and vertically. This
+            reduces display bandwidth by a factor of 1 << n; horizontal repeat
+            occurs inside the video hardware, and vertical repeat is achieved
+            by re-fetching the same scanline multiple times.
+          "}
+    - name: framebuf
+      info: |
+        Framebuffer pointer. Must be aligned to the size of one SDRAM burst
+        (on DOOMSoC ULX3S this is 16 bytes, 8x16b), and the contents is always
+        8bpp paletted. FRAMEBUF can only be safely modified when the video
+        hardware is disabled (!CSR_EN), or when the pixel DMA is paused during
+        vertical blanking (CSR_VIRQ && CSR_VIRQ_PAUSES_DMA)
+      bits:
+        - {b: [31, 4], access: rw}
+    - name: dispsize
+      info: |
+        Read-only display width/height register. Get the maximum display
+        resolution, which is achieved when CSR_LOG_PIX_REPEAT is 0      
+      bits:
+        - {b: [15, 0], name: w, access: rov}
+        - {b: [31, 16], name: h, access: rov}
+    - name: palette
+      info: |
+        Write-only palette update. The palette contains 256 entries of RGB888
+        (R in MSB position). Each 32-bit write to this address contains the
+        8-bit palette address to be updated, and the 24-bit pixel colour to be
+        written. No readback is provided (the palette RAM read port is in a
+        different clock domain!), so for palette read-modify-write operations,
+        software must maintain a shadow palette in RAM.
+      bits:
+        - {b: [23, 0], name: colour, access: wf}
+        - {b: [31, 24], name: addr, access: wf}
+

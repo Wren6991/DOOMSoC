@@ -4,6 +4,8 @@ file pll_25_75.v
 file pll_25_80.v
 file pll_25_100.v
 file pll_25_125.v
+file pll_25_243p75.v
+file pll_25_228p75.v
 
 file $LIBFPGA/common/blinky.v
 file $LIBFPGA/common/fpga_reset.v

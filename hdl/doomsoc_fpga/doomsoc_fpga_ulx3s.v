@@ -51,8 +51,13 @@ module doomsoc_fpga (
 	input  wire        uart_rx
 );
 
+// System clock and DVI bit clock are derived from board oscillator using
+// PLLs. DVI pixel clock is then divided directly from the bit clock using
+// in-fabric ring counter (and then hopefully promoted automatically to global
+// distribution)
+
 wire clk_sys;
-wire clk_dvi_pix = clk_osc;
+wire clk_dvi_pix;
 wire clk_dvi_bit;
 
 wire pll_sys_locked;
@@ -65,8 +70,8 @@ pll_25_80 pll_sys (
 	.locked  (pll_sys_locked)
 );
 
-pll_25_125 pll_bit (
-	.clkin   (clk_dvi_pix),
+pll_25_228p75 pll_bit (
+	.clkin   (clk_osc),
 	.clkout0 (clk_dvi_bit),
 	.locked  (pll_bit_locked)
 );
@@ -79,6 +84,26 @@ fpga_reset #(
 	.force_rst_n (pll_sys_locked && pll_bit_locked),
 	.rst_n       (rst_n_por)
 );
+
+wire rst_n_dvi_pix_div;
+
+reset_sync sync_pix_div_rst (
+	.clk       (clk_dvi_bit),
+	.rst_n_in  (rst_n_por),
+	.rst_n_out (rst_n_dvi_pix_div)
+);
+
+reg [4:0] clk_dvi_pix_div;
+
+always @ (posedge clk_dvi_bit or negedge rst_n_dvi_pix_div)
+	if (!rst_n_dvi_pix_div)
+		clk_dvi_pix_div <= 5'b11100;
+	else
+		clk_dvi_pix_div <= {clk_dvi_pix_div[3:0], clk_dvi_pix_div[4]};
+
+assign clk_dvi_pix = clk_dvi_pix_div[4];
+
+
 
 doomsoc_core #(
 	.W_SDRAM_BANKSEL (2),

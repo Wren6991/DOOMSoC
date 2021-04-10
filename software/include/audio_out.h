@@ -49,8 +49,9 @@ static inline void audio_out_set_clkdiv(uint32_t div) {
 	mm_audio_out->div = div;
 }
 
-// Use a constant argument
+// Use a constant argument.
+// Fractional bits masked off because they add an audible hiss.
 #define audio_out_set_sample_freq(freq) audio_out_set_clkdiv((uint32_t)((CLK_SYS_MHZ * 1e6 * (1 << AUDIO_OUT_DIV_INT_LSB)) / \
-	(AUDIO_OUT_OVERSAMPLE_RATE * freq)))
+	(AUDIO_OUT_OVERSAMPLE_RATE * freq)) & AUDIO_OUT_DIV_INT_MASK)
 
 #endif

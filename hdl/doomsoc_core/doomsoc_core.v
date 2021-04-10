@@ -160,7 +160,6 @@ wire [1:0]         sdram_dcache_htrans;
 wire [2:0]         sdram_dcache_hsize;
 wire [2:0]         sdram_dcache_hburst;
 wire [3:0]         sdram_dcache_hprot;
-wire [3:0]         sdram_dcache_hprot_raw;
 wire               sdram_dcache_hmastlock;
 wire [W_HDATA-1:0] sdram_dcache_hwdata;
 wire [W_HDATA-1:0] sdram_dcache_hrdata;
@@ -174,12 +173,10 @@ wire [1:0]         sdram_icache_htrans;
 wire [2:0]         sdram_icache_hsize;
 wire [2:0]         sdram_icache_hburst;
 wire [3:0]         sdram_icache_hprot;
-wire [3:0]         sdram_icache_hprot_raw;
 wire               sdram_icache_hmastlock;
 wire [W_HDATA-1:0] sdram_icache_hwdata;
 wire [W_HDATA-1:0] sdram_icache_hrdata;
 
-// video port currently hooked up to a burstgen for testing purposes
 wire               sdram_video_hready;
 wire               sdram_video_hready_resp;
 wire               sdram_video_hresp;
@@ -189,7 +186,6 @@ wire [1:0]         sdram_video_htrans;
 wire [2:0]         sdram_video_hsize;
 wire [2:0]         sdram_video_hburst;
 wire [3:0]         sdram_video_hprot;
-wire [3:0]         sdram_video_hprot_raw;
 wire               sdram_video_hmastlock;
 wire [W_HDATA-1:0] sdram_video_hwdata;
 wire [W_HDATA-1:0] sdram_video_hrdata;
@@ -205,7 +201,6 @@ wire [1:0]         sram_dcache_htrans;
 wire [2:0]         sram_dcache_hsize;
 wire [2:0]         sram_dcache_hburst;
 wire [3:0]         sram_dcache_hprot;
-wire [3:0]         sram_dcache_hprot_raw;
 wire               sram_dcache_hmastlock;
 wire [W_HDATA-1:0] sram_dcache_hwdata;
 wire [W_HDATA-1:0] sram_dcache_hrdata;
@@ -219,7 +214,6 @@ wire [1:0]         sram_icache_htrans;
 wire [2:0]         sram_icache_hsize;
 wire [2:0]         sram_icache_hburst;
 wire [3:0]         sram_icache_hprot;
-wire [3:0]         sram_icache_hprot_raw;
 wire               sram_icache_hmastlock;
 wire [W_HDATA-1:0] sram_icache_hwdata;
 wire [W_HDATA-1:0] sram_icache_hrdata;
@@ -301,14 +295,16 @@ wire               tbman_pready;
 wire [W_HDATA-1:0] tbman_prdata;
 wire               tbman_pslverr;
 
-wire [W_PADDR-1:0] bgen0_paddr;
-wire               bgen0_psel;
-wire               bgen0_penable;
-wire               bgen0_pwrite;
-wire [W_HDATA-1:0] bgen0_pwdata;
-wire               bgen0_pready;
-wire [W_HDATA-1:0] bgen0_prdata;
-wire               bgen0_pslverr;
+wire [W_PADDR-1:0] video_paddr;
+wire               video_psel;
+wire               video_penable;
+wire               video_pwrite;
+wire [W_HDATA-1:0] video_pwdata;
+wire               video_pready;
+wire [W_HDATA-1:0] video_prdata;
+wire               video_pslverr;
+
+wire               video_irq;
 
 
 // ----------------------------------------------------------------------------
@@ -356,10 +352,11 @@ hazard5_cpu_2port #(
 	.d_hwdata    (proc_d_hwdata),
 	.d_hrdata    (proc_d_hrdata),
 
-	.irq             ({
-		14'h0,
+	.irq         ({
+		13'h0,
+		uart_irq,
 		audio_irq,
-		uart_irq
+		video_irq
 	})
 );
 
@@ -442,115 +439,50 @@ ahb_cache_readonly #(
 // ----------------------------------------------------------------------------
 // DVI Out
 
-wire [9:0] tmds0;
-wire [9:0] tmds1;
-wire [9:0] tmds2;
+dvi_framebuf_ahbl #(
+	.W_ADDR         (W_HADDR),
+	.W_DATA         (W_HDATA),
+	.LEN_AHBL_BURST (4)
+) dvi_ctrl (
+	.clk_sys         (clk_sys),
+	.clk_pix         (clk_dvi_pix),
+	.clk_bit         (clk_dvi_bit),
+	.rst_n_sys       (rst_n_sys),
+	.rst_n_pix       (rst_n_dvi_pix),
+	.rst_n_bit       (rst_n_dvi_bit),
 
-// FIXME just outputting a test pattern, and probably shouldn't all be at this
-// hierarchy level
+	.apbs_psel       (video_psel),
+	.apbs_penable    (video_penable),
+	.apbs_pwrite     (video_pwrite),
+	.apbs_paddr      (video_paddr),
+	.apbs_pwdata     (video_pwdata),
+	.apbs_prdata     (video_prdata),
+	.apbs_pready     (video_pready),
+	.apbs_pslverr    (video_pslverr),
 
-wire rgb_rdy;
+	.ahblm_haddr     (sdram_video_haddr),
+	.ahblm_htrans    (sdram_video_htrans),
+	.ahblm_hwrite    (sdram_video_hwrite),
+	.ahblm_hsize     (sdram_video_hsize),
+	.ahblm_hburst    (sdram_video_hburst),
+	.ahblm_hprot     (sdram_video_hprot),
+	.ahblm_hmastlock (sdram_video_hmastlock),
+	.ahblm_hready    (sdram_video_hready),
+	.ahblm_hresp     (sdram_video_hresp),
+	.ahblm_hwdata    (sdram_video_hwdata),
+	.ahblm_hrdata    (sdram_video_hrdata),
 
-reg [10:0] hctr;
-reg [10:0] vctr;
-reg [10:0] framectr;
+	.irq             (video_irq),
 
-always @ (posedge clk_dvi_pix or negedge rst_n_dvi_pix) begin
-	if (!rst_n_dvi_pix) begin
-		hctr <= 0;
-		vctr <= 0;
-		framectr <= 0;
-	end else if (rgb_rdy) begin
-		hctr <= hctr + 1;
-		if (hctr == 639) begin
-			hctr <= 0;
-			if (vctr == 479) begin
-				vctr <= 0;
-				framectr <= framectr + 1;
-			end else begin
-				vctr <= vctr + 1;
-			end
-		end
-	end
-end
-
-dvi_tx_parallel #(
-	// 640x480p 60 Hz timings from CEA-861D
-	.H_SYNC_POLARITY (1'b0),
-	.H_FRONT_PORCH   (16),
-	.H_SYNC_WIDTH    (96),
-	.H_BACK_PORCH    (48),
-	.H_ACTIVE_PIXELS (640),
-
-	.V_SYNC_POLARITY (1'b0),
-	.V_FRONT_PORCH   (10),
-	.V_SYNC_WIDTH    (2),
-	.V_BACK_PORCH    (33),
-	.V_ACTIVE_LINES  (480)
-) dvi_tx_ctrl (
-	.clk     (clk_dvi_pix),
-	.rst_n   (rst_n_dvi_pix),
-	.en      (1'b1),
-
-	.r       ((hctr + framectr) << 2),
-	.g       ((vctr + framectr) << 2),
-	.b       (framectr),
-	.rgb_rdy (rgb_rdy),
-
-	.tmds2   (tmds2),
-	.tmds1   (tmds1),
-	.tmds0   (tmds0)
+	.dvip            (dvip),
+	.dvin            (dvin)
 );
 
-dvi_serialiser ser0 (
-	.clk_pix   (clk_dvi_pix),
-	.rst_n_pix (rst_n_dvi_pix),
-	.clk_x5    (clk_dvi_bit),
-	.rst_n_x5  (rst_n_dvi_bit),
-
-	.d         (tmds0),
-	.qp        (dvip[0]),
-	.qn        (dvin[0])
-);
-
-dvi_serialiser ser1 (
-	.clk_pix   (clk_dvi_pix),
-	.rst_n_pix (rst_n_dvi_pix),
-	.clk_x5    (clk_dvi_bit),
-	.rst_n_x5  (rst_n_dvi_bit),
-
-	.d         (tmds1),
-	.qp        (dvip[1]),
-	.qn        (dvin[1])
-);
-
-
-dvi_serialiser ser2 (
-	.clk_pix   (clk_dvi_pix),
-	.rst_n_pix (rst_n_dvi_pix),
-	.clk_x5    (clk_dvi_bit),
-	.rst_n_x5  (rst_n_dvi_bit),
-
-	.d         (tmds2),
-	.qp        (dvip[2]),
-	.qn        (dvin[2])
-);
-
-dvi_serialiser serclk (
-	.clk_pix   (clk_dvi_pix),
-	.rst_n_pix (rst_n_dvi_pix),
-	.clk_x5    (clk_dvi_bit),
-	.rst_n_x5  (rst_n_dvi_bit),
-
-	.d         (10'b0000011111),
-	.qp        (dvip[3]),
-	.qn        (dvin[3])
-);
+assign sdram_video_hready = sdram_video_hready_resp;
 
 
 // ----------------------------------------------------------------------------
 // Busfabric
-
 
 ahbl_splitter #(
 	.N_PORTS   (2),
@@ -708,14 +640,14 @@ apb_splitter #(
 	.apbs_prdata  (bridge_prdata),
 	.apbs_pslverr (bridge_pslverr),
 
-	.apbm_paddr   ({tbman_paddr   , audio_paddr   , bgen0_paddr   , sdram_paddr   , uart_paddr  }),
-	.apbm_psel    ({tbman_psel    , audio_psel    , bgen0_psel    , sdram_psel    , uart_psel   }),
-	.apbm_penable ({tbman_penable , audio_penable , bgen0_penable , sdram_penable , uart_penable}),
-	.apbm_pwrite  ({tbman_pwrite  , audio_pwrite  , bgen0_pwrite  , sdram_pwrite  , uart_pwrite }),
-	.apbm_pwdata  ({tbman_pwdata  , audio_pwdata  , bgen0_pwdata  , sdram_pwdata  , uart_pwdata }),
-	.apbm_pready  ({tbman_pready  , audio_pready  , bgen0_pready  , sdram_pready  , uart_pready }),
-	.apbm_prdata  ({tbman_prdata  , audio_prdata  , bgen0_prdata  , sdram_prdata  , uart_prdata }),
-	.apbm_pslverr ({tbman_pslverr , audio_pslverr , bgen0_pslverr , sdram_pslverr , uart_pslverr})
+	.apbm_paddr   ({tbman_paddr   , audio_paddr   , video_paddr   , sdram_paddr   , uart_paddr  }),
+	.apbm_psel    ({tbman_psel    , audio_psel    , video_psel    , sdram_psel    , uart_psel   }),
+	.apbm_penable ({tbman_penable , audio_penable , video_penable , sdram_penable , uart_penable}),
+	.apbm_pwrite  ({tbman_pwrite  , audio_pwrite  , video_pwrite  , sdram_pwrite  , uart_pwrite }),
+	.apbm_pwdata  ({tbman_pwdata  , audio_pwdata  , video_pwdata  , sdram_pwdata  , uart_pwdata }),
+	.apbm_pready  ({tbman_pready  , audio_pready  , video_pready  , sdram_pready  , uart_pready }),
+	.apbm_prdata  ({tbman_prdata  , audio_prdata  , video_prdata  , sdram_prdata  , uart_prdata }),
+	.apbm_pslverr ({tbman_pslverr , audio_pslverr , video_pslverr , sdram_pslverr , uart_pslverr})
 );
 
 
@@ -754,7 +686,7 @@ ahbl_sdram #(
 	.LEN_AHBL_BURST     (4),
 
 	.FIXED_TIMINGS      (1), // 1: use fixed values, 0: allow programming via APB.
-	// Following are for AS4C32M16SB-7 at (aspirational) 80 MHz
+	// Following are for AS4C32M16SB-7 at 80 MHz
 	.FIXED_TIME_RC      (3'd5   ), // 63 ns 6 clk (just!)
 	.FIXED_TIME_RCD     (3'd1   ), // 21 ns 2 clk
 	.FIXED_TIME_RP      (3'd1   ), // 21 ns 2 clk
@@ -862,35 +794,5 @@ tbman inst_tbman (
 	.apbs_pready  (tbman_pready),
 	.apbs_pslverr (tbman_pslverr)
 );
-
-apb_burst_gen #(
-	.W_ADDR(W_HADDR),
-	.W_DATA(W_HDATA)
-) bgen0 (
-	.clk             (clk_sys),
-	.rst_n           (rst_n_sys),
-
-	.apbs_psel       (bgen0_psel),
-	.apbs_penable    (bgen0_penable),
-	.apbs_pwrite     (bgen0_pwrite),
-	.apbs_paddr      (bgen0_paddr),
-	.apbs_pwdata     (bgen0_pwdata),
-	.apbs_prdata     (bgen0_prdata),
-	.apbs_pready     (bgen0_pready),
-	.apbs_pslverr    (bgen0_pslverr),
-
-	.ahblm_haddr     (sdram_video_haddr),
-	.ahblm_hwrite    (sdram_video_hwrite),
-	.ahblm_htrans    (sdram_video_htrans),
-	.ahblm_hsize     (sdram_video_hsize),
-	.ahblm_hburst    (sdram_video_hburst),
-	.ahblm_hprot     (sdram_video_hprot),
-	.ahblm_hmastlock (sdram_video_hmastlock),
-	.ahblm_hready    (sdram_video_hready),
-	.ahblm_hresp     (sdram_video_hresp),
-	.ahblm_hwdata    (sdram_video_hwdata),
-	.ahblm_hrdata    (sdram_video_hrdata)
-);
-assign sdram_video_hready = sdram_video_hready_resp;
 
 endmodule

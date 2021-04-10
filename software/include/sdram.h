@@ -5,6 +5,9 @@
 #include "hw/sdram_ctrl_regs.h"
 #include "delay.h"
 
+#include <stdint.h>
+#include <stdbool.h>
+
 struct sdram_ctrl_hw {
 	io_rw_32 csr;
 	io_rw_32 time;
