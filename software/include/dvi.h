@@ -56,9 +56,28 @@ static inline int dvi_get_dispsize_h() {
 	return (mm_dvi_ctrl->dispsize & DVI_FRAMEBUF_DISPSIZE_H_MASK) >> DVI_FRAMEBUF_DISPSIZE_H_LSB;
 }
 
-static inline void dvi_write_palette(uint8_t addr, uint32_t rgb) {
+static inline void dvi_write_palette_rgb888(uint8_t addr, uint32_t rgb) {
 	mm_dvi_ctrl->palette = (addr << DVI_FRAMEBUF_PALETTE_ADDR_LSB & DVI_FRAMEBUF_PALETTE_ADDR_MASK) |
 		(rgb << DVI_FRAMEBUF_PALETTE_COLOUR_LSB & DVI_FRAMEBUF_PALETTE_COLOUR_MASK);
+}
+
+static inline void dvi_write_palette_rgb555(uint8_t addr, uint16_t rgb) {
+	uint32_t rgb32 = rgb;
+	dvi_write_palette_rgb888(addr,
+		(rgb32 & 0x001f) << ( 0 + 3 -  0) |
+		(rgb32 & 0x03e0) << ( 8 + 3 -  5) |
+		(rgb32 & 0x7c00) << (16 + 3 - 10)
+	);
+}
+
+static inline void dvi_load_palette_rgb888(uint8_t dst, const uint32_t *src, unsigned int len) {
+	for (unsigned int i = 0; i < len; ++i)
+		dvi_write_palette_rgb888(dst + i, src[i]);
+}
+
+static inline void dvi_load_palette_rgb555(uint8_t dst, const uint16_t *src, unsigned int len) {
+	for (unsigned int i = 0; i < len; ++i)
+		dvi_write_palette_rgb555(dst + i, src[i]);
 }
 
 #endif

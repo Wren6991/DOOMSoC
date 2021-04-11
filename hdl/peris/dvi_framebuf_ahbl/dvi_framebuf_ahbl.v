@@ -82,7 +82,7 @@ localparam W_HCTR     = 10;
 
 localparam LOG_FIFO_DEPTH = 4;
 
-wire              vsync;
+wire              set_vsync_irq;
 wire              pixfifo_runderflow;
 
 wire              csr_en;
@@ -111,7 +111,7 @@ dvi_framebuf_regs regs (
 	.apbs_pslverr          (apbs_pslverr),
 
 	.csr_en_o              (csr_en),
-	.csr_virq_i            (vsync),
+	.csr_virq_i            (set_vsync_irq),
 	.csr_virq_o            (csr_virq),
 	.csr_virqe_o           (csr_virqe),
 	.csr_virq_pauses_dma_o (csr_virq_pauses_dma),
@@ -133,7 +133,6 @@ dvi_framebuf_regs regs (
 assign framebuf_start[3:0] = 4'h0;
 
 assign irq = csr_virq && csr_virqe;
-wire pause_dma = csr_virq && csr_virq_pauses_dma;
 
 // ----------------------------------------------------------------------------
 // Framebuffer DMA
@@ -153,10 +152,10 @@ reg [W_VCTR-1:0]       v_ctr;
 reg [W_HCTR-1:0]       h_ctr;
 reg [W_REPEAT_CTR-1:0] v_repeat_ctr;
 
-
+wire pause_dma;
 wire address_issued = ahblm_htrans[1] && ahblm_hready;
 wire hsync = address_issued && ~|h_ctr;
-assign vsync = hsync && ~|v_ctr;
+wire vsync = hsync && ~|v_ctr;
 
 wire [W_REPEAT_CTR-1:0] v_repeat_ctr_reload = ~({W_REPEAT_CTR{1'b1}} << csr_log_pix_repeat);
 
@@ -268,10 +267,13 @@ assign pixfifo_wdata = ahblm_hrdata;
 // ----------------------------------------------------------------------------
 // Clock domain crossing sys -> pix
 
+wire                    pixfifo_wempty;
 wire [W_DATA-1:0]       pixfifo_rdata;
 wire                    pixfifo_rpop;
 wire                    pixfifo_rempty;
 
+// TODO this doesn't fire right now, because rpop is gated on rempty to handle
+// fencing on pixel-domain line completion at beginning of vblank
 assign pixfifo_runderflow = pixfifo_rpop && pixfifo_rempty;
 
 async_fifo #(
@@ -283,7 +285,7 @@ async_fifo #(
 	.wdata  (pixfifo_wdata),
 	.wpush  (pixfifo_wpush),
 	.wfull  (/* unused */),
-	.wempty (/* unused */),
+	.wempty (pixfifo_wempty),
 	.wlevel (pixfifo_wlevel),
 
 	.rrst_n (rst_n_pix),
@@ -294,6 +296,22 @@ async_fifo #(
 	.rempty (pixfifo_rempty),
 	.rlevel (/* unused */)
 );
+
+// Sys domain needs to know when pix domain is in a quiescent state (no pixel
+// consumption) so that the vsync IRQ can be fired and update the palette RAM
+// -- easiest way to do this feedback is via FIFO flags.
+
+reg vsync_irq_pending;
+always @ (posedge clk_sys or negedge rst_n_sys) begin
+	if (!rst_n_sys) begin
+		vsync_irq_pending <= 1'b0;
+	end else begin
+		vsync_irq_pending <= (vsync_irq_pending || vsync) && !set_vsync_irq;
+	end
+end
+
+assign set_vsync_irq = vsync_irq_pending && pixfifo_wempty;
+assign pause_dma = (vsync_irq_pending || csr_virq) && csr_virq_pauses_dma;
 
 // CSR controls just go through 2FF synchronisers to avoid metastabilities.
 // Skew safety is provided by the staging of the writes by software (controls
@@ -320,9 +338,8 @@ reg [W_REPEAT_CTR-1:0] h_repeat_ctr;
 
 wire       pix_rdy;
 
-// FIXME need to avoid popping first word of next frame at end of frame (problem introduced by palette RAM delay cycle)
-assign pixfifo_rpop = csr_en_clk_pix && (
-	(!pix_shift_vld[0] && !pixfifo_rempty) ||
+assign pixfifo_rpop = csr_en_clk_pix && !pixfifo_rempty && (
+	!pix_shift_vld[0] ||
 	(pix_rdy && !pix_shift_vld[1] && ~|h_repeat_ctr)
 );
 
@@ -340,7 +357,7 @@ always @ (posedge clk_pix or negedge rst_n_pix) begin
 		pix_shift_vld <= {W_DATA/8{1'b1}};
 		h_repeat_ctr <= h_repeat_ctr_reload;
 	end else if (pix_rdy) begin
-		if (|h_repeat_ctr) begin
+		if (|h_repeat_ctr && first_pixel_was_read) begin
 			h_repeat_ctr <= h_repeat_ctr - 1'b1;
 		end else begin
 			h_repeat_ctr <= h_repeat_ctr_reload;
@@ -383,7 +400,9 @@ always @ (posedge clk_pix or negedge rst_n_pix) begin
 	end else begin
 		// First pmem read is on the first cycle where pixel shifter is valid, the
 		// "was_read" flag becomes true on the next cycle.
-		first_pixel_was_read <= first_pixel_was_read || |pix_shift_vld;
+		// We need to return to this state when the FIFO bottoms out during vblank.
+		first_pixel_was_read <= (first_pixel_was_read || |pix_shift_vld)
+			&& !(~|pix_shift_vld);
 	end
 end
 

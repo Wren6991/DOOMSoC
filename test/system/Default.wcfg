@@ -625,6 +625,10 @@
    <wvobject fp_name="group175" type="group">
       <obj_property name="label">Video</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb/inst_doomsoc_core/dvi_ctrl/irq" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">irq</obj_property>
+         <obj_property name="ObjectShortName">irq</obj_property>
+      </wvobject>
       <wvobject fp_name="group174" type="group">
          <obj_property name="label">Config Port</obj_property>
          <obj_property name="DisplayName">label</obj_property>
@@ -705,6 +709,10 @@
          <wvobject fp_name="/tb/inst_doomsoc_core/dvi_ctrl/hsync" type="logic" db_ref_id="1">
             <obj_property name="ElementShortName">hsync</obj_property>
             <obj_property name="ObjectShortName">hsync</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/dvi_ctrl/vsync_irq_pending" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">vsync_irq_pending</obj_property>
+            <obj_property name="ObjectShortName">vsync_irq_pending</obj_property>
          </wvobject>
          <wvobject fp_name="/tb/inst_doomsoc_core/dvi_ctrl/h_ctr" type="array" db_ref_id="1">
             <obj_property name="ElementShortName">h_ctr[9:0]</obj_property>
@@ -793,6 +801,18 @@
             <obj_property name="ElementShortName">h_repeat_ctr[2:0]</obj_property>
             <obj_property name="ObjectShortName">h_repeat_ctr[2:0]</obj_property>
             <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/dvi_ctrl/rgb_rdy" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">rgb_rdy</obj_property>
+            <obj_property name="ObjectShortName">rgb_rdy</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/dvi_ctrl/pix_rdy" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">pix_rdy</obj_property>
+            <obj_property name="ObjectShortName">pix_rdy</obj_property>
+         </wvobject>
+         <wvobject fp_name="/tb/inst_doomsoc_core/dvi_ctrl/first_pixel_was_read" type="logic" db_ref_id="1">
+            <obj_property name="ElementShortName">first_pixel_was_read</obj_property>
+            <obj_property name="ObjectShortName">first_pixel_was_read</obj_property>
          </wvobject>
       </wvobject>
       <wvobject fp_name="group178" type="group">
