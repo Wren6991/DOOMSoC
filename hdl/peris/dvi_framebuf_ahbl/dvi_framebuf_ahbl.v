@@ -92,9 +92,9 @@ wire              csr_virq_pauses_dma;
 wire [1:0]        csr_log_pix_repeat;
 wire [W_ADDR-1:0] framebuf_start;
 
-wire [23:0]       palette_colour;
+wire [23:0]       palette_wdata;
 wire              palette_colour_wen;
-wire [7:0]        palette_addr;
+wire [7:0]        palette_waddr;
 wire              palette_addr_wen;
 
 dvi_framebuf_regs regs (
@@ -124,9 +124,9 @@ dvi_framebuf_regs regs (
 	.dispsize_w_i          (DISPSIZE_W[15:0]),
 	.dispsize_h_i          (DISPSIZE_H[15:0]),
 
-	.palette_colour_o      (palette_colour),
+	.palette_colour_o      (palette_wdata),
 	.palette_colour_wen    (palette_colour_wen),
-	.palette_addr_o        (palette_addr),
+	.palette_addr_o        (palette_waddr),
 	.palette_addr_wen      (palette_addr_wen)
 );
 
@@ -318,11 +318,12 @@ reg [W_DATA-1:0]       pix_shift_buf;
 reg [W_DATA/8-1:0]     pix_shift_vld;
 reg [W_REPEAT_CTR-1:0] h_repeat_ctr;
 
-wire       rgb_rdy;
+wire       pix_rdy;
 
+// FIXME need to avoid popping first word of next frame at end of frame (problem introduced by palette RAM delay cycle)
 assign pixfifo_rpop = csr_en_clk_pix && (
 	(!pix_shift_vld[0] && !pixfifo_rempty) ||
-	(rgb_rdy && !pix_shift_vld[1] && ~|h_repeat_ctr)
+	(pix_rdy && !pix_shift_vld[1] && ~|h_repeat_ctr)
 );
 
 wire [W_REPEAT_CTR-1:0] h_repeat_ctr_reload = ~({W_REPEAT_CTR{1'b1}} << csr_log_pix_repeat_clk_pix);
@@ -338,7 +339,7 @@ always @ (posedge clk_pix or negedge rst_n_pix) begin
 		pix_shift_buf <= pixfifo_rdata;
 		pix_shift_vld <= {W_DATA/8{1'b1}};
 		h_repeat_ctr <= h_repeat_ctr_reload;
-	end else if (rgb_rdy) begin
+	end else if (pix_rdy) begin
 		if (|h_repeat_ctr) begin
 			h_repeat_ctr <= h_repeat_ctr - 1'b1;
 		end else begin
@@ -349,7 +350,45 @@ always @ (posedge clk_pix or negedge rst_n_pix) begin
 	end
 end
 
-wire [7:0] rgb_next = pix_shift_buf[7:0];
+wire [7:0] pix_next = pix_shift_buf[7:0];
+
+// ----------------------------------------------------------------------------
+// Palette mapping
+
+wire [7:0]  palette_raddr = pix_next;
+wire        palette_ren = pix_rdy;
+wire [23:0] palette_rdata;
+
+dvi_palette_mem #(
+	.W_ADDR (8),
+	.W_DATA (24)
+) pmem (
+	.wclk  (clk_sys),
+	.wen   (palette_addr_wen || palette_colour_wen),
+	.waddr (palette_waddr),
+	.wdata (palette_wdata),
+
+	.rclk  (clk_pix),
+	.ren   (palette_ren),
+	.raddr (palette_raddr),
+	.rdata (palette_rdata)
+);
+
+reg first_pixel_was_read;
+always @ (posedge clk_pix or negedge rst_n_pix) begin
+	if (!rst_n_pix) begin
+		first_pixel_was_read <= 1'b0;
+	end else if (!csr_en_clk_pix) begin
+		first_pixel_was_read <= 1'b0;
+	end else begin
+		// First pmem read is on the first cycle where pixel shifter is valid, the
+		// "was_read" flag becomes true on the next cycle.
+		first_pixel_was_read <= first_pixel_was_read || |pix_shift_vld;
+	end
+end
+
+wire rgb_rdy;
+assign pix_rdy = rgb_rdy || (|pix_shift_vld && !first_pixel_was_read);
 
 // ----------------------------------------------------------------------------
 // DVI timing/encode/serialise
@@ -375,9 +414,9 @@ dvi_tx_parallel #(
 	.rst_n   (rst_n_pix),
 	.en      (csr_en_clk_pix),
 
-	.r       ({rgb_next[7:5], 5'h00}),
-	.g       ({rgb_next[4:2], 5'h00}),
-	.b       ({rgb_next[1:0], 6'h00}),
+	.r       (palette_rdata[23:16]),
+	.g       (palette_rdata[15:8]),
+	.b       (palette_rdata[7:0]),
 	.rgb_rdy (rgb_rdy),
 
 	.tmds2   (tmds2),

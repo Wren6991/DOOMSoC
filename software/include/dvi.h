@@ -56,4 +56,9 @@ static inline int dvi_get_dispsize_h() {
 	return (mm_dvi_ctrl->dispsize & DVI_FRAMEBUF_DISPSIZE_H_MASK) >> DVI_FRAMEBUF_DISPSIZE_H_LSB;
 }
 
+static inline void dvi_write_palette(uint8_t addr, uint32_t rgb) {
+	mm_dvi_ctrl->palette = (addr << DVI_FRAMEBUF_PALETTE_ADDR_LSB & DVI_FRAMEBUF_PALETTE_ADDR_MASK) |
+		(rgb << DVI_FRAMEBUF_PALETTE_COLOUR_LSB & DVI_FRAMEBUF_PALETTE_COLOUR_MASK);
+}
+
 #endif

@@ -15,6 +15,9 @@ int main() {
 		framebuf[i] = i;
 	cache_flush();
 
+	for (int i = 0; i < 256; ++i)
+		dvi_write_palette(i, i << 16 | (~i & 0xff));
+
 	// Quadruple pixels horizontally and vertically.
 	dvi_set_log_pix_repeat(2);
 	dvi_set_framebuf_ptr((uintptr_t)framebuf);
